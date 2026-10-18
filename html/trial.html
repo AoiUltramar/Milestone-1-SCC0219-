@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Free VM trial · Cache & Carry</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../static/style.css">
+    </head>
+
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+
+        <header class="site-header">
+            <div class="wrap">
+                <a class="logo" href="index.html">
+                    <span class="logo-mark"><img src="../static/logo.png" alt="" width="36" height="36"></span>
+                    <span>Cache &amp; Carry<small>Cloud servers &amp; VPN</small></span>
+                </a>
+                <form class="search" role="search" action="index.html">
+                    <label for="q" class="visually-hidden">Search plans</label>
+                    <input id="q" name="q" type="search" placeholder="Search VMs, VPN plans, add-ons…">
+                    <button class="btn" type="submit">Search</button>
+                </form>
+                <nav class="header-actions" aria-label="Account">
+                    <a href="login.html">Sign in</a>
+                    <a href="about.html">About us</a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="2 items">2</span></a>
+                </nav>
+            </div>
+        </header>
+
+        <nav class="aisles" aria-label="Categories">
+            <ul>
+                <li><a href="index.html">All</a></li>
+                <li><a href="index.html#vms">Virtual machines</a></li>
+                <li><a href="index.html#vpn">VPN</a></li>
+                <li><a href="index.html#addons">Add-ons</a></li>
+                <li class="aisle-trial"><a href="trial.html" aria-current="page">Free VM trial</a></li>
+            </ul>
+        </nav>
+
+        <main id="main">
+            <div class="wrap">
+                <div class="page-head">
+                    <p class="eyebrow">Free for 14 days</p>
+                    <h1>Try a Standard VM, free</h1>
+                    <p class="lead">Pick an operating system and a data center and we'll have your server running in about a minute. No credit card needed, one trial per account.</p>
+                </div>
+
+                <div class="split">
+                    <section class="panel" aria-labelledby="setup-title" style="padding-top: 0;">
+                        <h2 id="setup-title">Set up your trial VM</h2>
+                        <form action="account.html">
+                            <fieldset class="option-grid field">
+                                <legend>Operating system</legend>
+                                <label class="option"><input type="radio" name="os" value="ubuntu" checked><span><strong>Ubuntu 24.04 LTS</strong>Most popular</span></label>
+                                <label class="option"><input type="radio" name="os" value="debian"><span><strong>Debian 12</strong>Lean and stable</span></label>
+                                <label class="option"><input type="radio" name="os" value="fedora"><span><strong>Fedora 40</strong>Latest packages</span></label>
+                                <label class="option"><input type="radio" name="os" value="rocky"><span><strong>Rocky Linux 9</strong>Enterprise-style</span></label>
+                            </fieldset>
+
+                            <fieldset class="option-grid field">
+                                <legend>Data center</legend>
+                                <label class="option"><input type="radio" name="region" value="sp" checked><span><strong>São Paulo</strong>Lowest latency for most of Brazil</span></label>
+                                <label class="option"><input type="radio" name="region" value="rj"><span><strong>Rio de Janeiro</strong>Southeast backup site</span></label>
+                                <label class="option"><input type="radio" name="region" value="for"><span><strong>Fortaleza</strong>Closest to the Northeast</span></label>
+                            </fieldset>
+
+                            <div class="field">
+                                <label for="hostname">Server name</label>
+                                <input id="hostname" type="text" placeholder="e.g. my-first-server" pattern="[a-z0-9-]+" aria-describedby="hostname-hint">
+                                <p class="hint" id="hostname-hint">Lowercase letters, numbers and dashes.</p>
+                            </div>
+
+                            <div class="field">
+                                <label for="ssh">SSH public key <span style="font-weight: 400;">(optional)</span></label>
+                                <textarea id="ssh" placeholder="ssh-ed25519 AAAA… you@laptop" aria-describedby="ssh-hint"></textarea>
+                                <p class="hint" id="ssh-hint">Leave empty and we'll email you a one-time password instead.</p>
+                            </div>
+
+                            <label class="check"><input type="checkbox" required> <span>I agree to the fair use policy: no mining, no spam, no attacks on other networks.</span></label>
+
+                            <button class="btn big" type="submit">Start my free trial</button>
+                        </form>
+                    </section>
+
+                    <aside class="panel tinted" aria-labelledby="included-title">
+                        <h2 id="included-title">What you get</h2>
+                        <ul class="included">
+                            <li><span>CPU</span><strong>2 vCPU</strong></li>
+                            <li><span>Memory</span><strong>4 GB RAM</strong></li>
+                            <li><span>Storage</span><strong>80 GB SSD</strong></li>
+                            <li><span>Transfer</span><strong>100 GB during trial</strong></li>
+                            <li><span>Length</span><strong>14 days</strong></li>
+                            <li><span>Price</span><strong>R$ 0,00</strong></li>
+                        </ul>
+                        <div class="notice" style="margin-top: 1.25rem;">You need to be signed in to start a trial. <a href="login.html">Sign in or create an account</a>.</div>
+                        <p class="hint" style="margin-top: 1rem;">After 14 days the VM pauses and your files are kept for 7 more days. Upgrade to a Standard VM (R$ 49,90/month) at any point to keep it running.</p>
+                    </aside>
+                </div>
+
+                <section aria-labelledby="how-title" style="margin-top: 3rem;">
+                    <h2 id="how-title">How the trial works</h2>
+                    <ol class="steps">
+                        <li><strong>Choose</strong><br>Pick an operating system and a data center.</li>
+                        <li><strong>Connect</strong><br>Log in over SSH a minute later.</li>
+                        <li><strong>Decide</strong><br>Upgrade before day 14, or let it pause. No charge either way.</li>
+                    </ol>
+                </section>
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="wrap">
+                <span>Cache &amp; Carry</span>
+                <nav aria-label="Footer">
+                    <a href="index.html">Home</a>
+                    <a href="trial.html">Free trial</a>
+                    <a href="about.html">About us</a>
+                    <a href="login.html">Log in</a>
+                    <a href="cart.html">Cart</a>
+                </nav>
+            </div>
+        </footer>
+    </body>
+</html>
