@@ -100,28 +100,43 @@
                             <button class="btn secondary" type="button">Empty cart</button>
                         </div>
                     </section>
-
+                    
+                    <!-- CREDIT CARD INFORMATION, ALONGSIDE THE REQUIRED PATTERN -->
+                    <!--
+                    For the name, must be only letters (caps lock)
+                    the credit card number must be only numbers (16 characters)
+                    Date must follow number/number
+                    CVV must be 3 characters only numbers
+                    -->
                     <section class="panel tinted" aria-labelledby="payment-title">
                         <h2 id="payment-title">Payment</h2>
                         <form action="account.html">
                             <div class="field">
                                 <label for="card-name">Name on card</label>
-                                <input id="card-name" type="text" autocomplete="cc-name" required>
+                                <input id="card-name" type="text" autocomplete="cc-name" placeholder="e.g. PEDRO H HOLANDA" pattern="[A-Z ]+" title="Like PEDRO H HOLANDA" required> <!-- Full caps, only letters -->
                             </div>
                             <div class="field">
                                 <label for="card-number">Credit card number</label>
-                                <input id="card-number" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" required>
-                            </div>
+                                <input id="card-number" type="text" inputmode="numeric" autocomplete="cc-number" 
+                                placeholder="0000 0000 0000 0000"
+                                pattern="[0-9]{4} ?[0-9]{4} ?[0-9]{4} ?[0-9]{4}"
+                                title="16 digits, spaces optional" maxlength="19" required>
+                               </div>
                             <div class="field-row">
-                                <div class="field">
-                                    <label for="card-expiration">Expiration</label>
-                                    <input id="card-expiration" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" required>
-                                </div>
+                            <div class="field">
+                                <label for="card-expiration">Expiration</label>
+                                <input id="card-expiration" type="text" inputmode="numeric" autocomplete="cc-exp"
+                                placeholder="MM/YY"
+                                pattern="(0[1-9]|1[0-2])/?[0-9]{2}"
+                                title="Month and year, like 08/29"
+                                maxlength="5" required>
+                            </div>
                                 <div class="field">
                                     <label for="card-cvv">CVV</label>
-                                    <input id="card-cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" required>
+                                    <input id="card-cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" pattern="[0-9]{3}" required>
                                 </div>
                             </div>
+                            <!-- the products on cart are just placeholders, they cannot be removed nor updated yet -->
                             <div class="notice" style="margin: .25rem 0 1.25rem;">
                                 <strong>Due today: R$ 64,80</strong><br>
                                 <span class="hint">Then R$ 64,80 every month until you cancel.</span>
