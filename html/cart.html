@@ -8,6 +8,12 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/cart-page.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
     </head>
 
     <body>
@@ -27,7 +33,7 @@
                 <nav class="header-actions" aria-label="Account">
                     <a href="login.html">Sign in</a>
                     <a href="about.html">About us</a>
-                    <a href="cart.html" aria-current="page">Cart<span class="cart-count" aria-label="2 items">2</span></a>
+                    <a href="cart.html" aria-current="page">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
                 </nav>
             </div>
         </header>
@@ -49,99 +55,90 @@
                     <p>Plans are billed monthly. You can cancel any time from your account.</p>
                 </div>
 
-                <div class="split">
+                <!-- Shown after a successful payment -->
+                <section class="panel tinted order-done" id="order-done" aria-labelledby="done-title" tabindex="-1" hidden>
+                    <p class="eyebrow">Order placed</p>
+                    <h2 id="done-title">Thanks! Your services are being set up.</h2>
+                    <p id="done-summary"></p>
+                    <div class="actions">
+                        <a class="btn" href="account.html">See my orders</a>
+                        <a class="btn secondary" href="index.html">Keep shopping</a>
+                    </div>
+                </section>
+
+                <div class="split" id="cart-area">
                     <section class="panel" aria-labelledby="cart-title">
-                        <h2 id="cart-title">Current order</h2>
-                        <div class="table-scroll">
-                            <table>
-                                <caption class="visually-hidden">Plans currently in the cart</caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Plan</th>
-                                        <th scope="col">Quantity</th>
-                                        <th scope="col" class="num">Price / month</th>
-                                        <th scope="col" class="num">Total</th>
-                                        <th scope="col"><span class="visually-hidden">Actions</span></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>🖥️ Standard VM<br><span class="hint">São Paulo · Ubuntu 24.04</span></td>
-                                        <td>
-                                            <label class="visually-hidden" for="vm-quantity">Standard VM quantity</label>
-                                            <input id="vm-quantity" type="number" min="1" max="10" value="1">
-                                        </td>
-                                        <td class="num">R$ 49,90</td>
-                                        <td class="num">R$ 49,90</td>
-                                        <td><button class="btn small secondary" type="button">Remove</button></td>
-                                    </tr>
-                                    <tr>
-                                        <td>🔒 Personal VPN<br><span class="hint">Up to 5 devices</span></td>
-                                        <td>
-                                            <label class="visually-hidden" for="vpn-quantity">Personal VPN quantity</label>
-                                            <input id="vpn-quantity" type="number" min="1" max="10" value="1">
-                                        </td>
-                                        <td class="num">R$ 14,90</td>
-                                        <td class="num">R$ 14,90</td>
-                                        <td><button class="btn small secondary" type="button">Remove</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <h2 id="cart-title" tabindex="-1">Current order</h2>
+
+                        <div class="notice" id="cart-empty" hidden>
+                            Your cart is empty. <a href="vms.html">Browse virtual machines</a> or <a href="vpn.html">VPN plans</a>.
                         </div>
 
-                        <div class="totals">
-                            <div><span>2 items</span><span>R$ 64,80</span></div>
-                            <div class="grand"><span>Monthly total</span><span>R$ 64,80</span></div>
-                        </div>
+                        <div id="cart-filled">
+                            <div class="table-scroll">
+                                <table>
+                                    <caption class="visually-hidden">Plans currently in the cart</caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Plan</th>
+                                            <th scope="col">Quantity</th>
+                                            <th scope="col" class="num">Price</th>
+                                            <th scope="col" class="num">Total</th>
+                                            <th scope="col"><span class="visually-hidden">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cart-lines"></tbody>
+                                </table>
+                            </div>
 
-                        <div class="actions">
-                            <a class="btn secondary" href="index.html">Continue shopping</a>
-                            <button class="btn secondary" type="button">Update cart</button>
-                            <button class="btn secondary" type="button">Empty cart</button>
+                            <div class="totals">
+                                <div><span id="cart-count-text">0 items</span><span id="cart-subtotal">R$ 0,00</span></div>
+                                <div class="grand"><span>Monthly total</span><span id="cart-total">R$ 0,00</span></div>
+                            </div>
+
+                            <div class="actions">
+                                <a class="btn secondary" href="index.html">Continue shopping</a>
+                                <button class="btn secondary" type="button" id="empty-cart">Empty cart</button>
+                            </div>
                         </div>
                     </section>
-                    
-                    <!-- CREDIT CARD INFORMATION, ALONGSIDE THE REQUIRED PATTERN -->
-                    <!--
-                    For the name, must be only letters (caps lock)
-                    the credit card number must be only numbers (16 characters)
-                    Date must follow number/number
-                    CVV must be 3 characters only numbers
-                    -->
-                    <section class="panel tinted" aria-labelledby="payment-title">
+
+                    <!-- Card fields: any number is accepted (assignment rule); only the last 4 digits are saved. -->
+                    <section class="panel tinted" aria-labelledby="payment-title" id="payment">
                         <h2 id="payment-title">Payment</h2>
-                        <form action="account.html">
+                        <div class="notice" id="pay-signin" hidden>
+                            <a href="login.html?next=cart.html">Sign in or create an account</a> to pay. Your cart will be kept.
+                        </div>
+                        <div class="notice warn" id="pay-admin" hidden>
+                            You're signed in as an administrator. Sign in with a customer account to place orders.
+                        </div>
+                        <form id="pay-form" novalidate>
                             <div class="field">
                                 <label for="card-name">Name on card</label>
-                                <input id="card-name" type="text" autocomplete="cc-name" placeholder="e.g. PEDRO H HOLANDA" pattern="[A-Z ]+" title="Like PEDRO H HOLANDA" required> <!-- Full caps, only letters -->
+                                <input id="card-name" name="name" type="text" autocomplete="cc-name" placeholder="e.g. PEDRO H HOLANDA" required>
                             </div>
                             <div class="field">
                                 <label for="card-number">Credit card number</label>
-                                <input id="card-number" type="text" inputmode="numeric" autocomplete="cc-number" 
-                                placeholder="0000 0000 0000 0000"
-                                pattern="[0-9]{4} ?[0-9]{4} ?[0-9]{4} ?[0-9]{4}"
-                                title="16 digits, spaces optional" maxlength="19" required>
-                               </div>
-                            <div class="field-row">
-                            <div class="field">
-                                <label for="card-expiration">Expiration</label>
-                                <input id="card-expiration" type="text" inputmode="numeric" autocomplete="cc-exp"
-                                placeholder="MM/YY"
-                                pattern="(0[1-9]|1[0-2])/?[0-9]{2}"
-                                title="Month and year, like 08/29"
-                                maxlength="5" required>
+                                <input id="card-number" name="number" type="text" inputmode="numeric" autocomplete="cc-number"
+                                       placeholder="0000 0000 0000 0000" maxlength="23" required>
                             </div>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label for="card-expiration">Expiration</label>
+                                    <input id="card-expiration" name="expiry" type="text" inputmode="numeric" autocomplete="cc-exp"
+                                           placeholder="MM/YY" maxlength="5" required>
+                                </div>
                                 <div class="field">
                                     <label for="card-cvv">CVV</label>
-                                    <input id="card-cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" pattern="[0-9]{3}" required>
+                                    <input id="card-cvv" name="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" required>
                                 </div>
                             </div>
-                            <!-- the products on cart are just placeholders, they cannot be removed nor updated yet -->
                             <div class="notice" style="margin: .25rem 0 1.25rem;">
-                                <strong>Due today: R$ 64,80</strong><br>
-                                <span class="hint">Then R$ 64,80 every month until you cancel.</span>
+                                <strong>Due today: <span id="due-today">R$ 0,00</span></strong><br>
+                                <span class="hint">Then the same amount every month until you cancel.</span>
                             </div>
-                            <button class="btn" type="submit">Pay and activate</button>
+                            <div class="notice warn" id="pay-error" role="alert" tabindex="-1" hidden></div>
+                            <button class="btn" type="submit" id="pay-button">Pay and activate</button>
                         </form>
                     </section>
                 </div>

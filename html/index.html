@@ -8,6 +8,12 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/catalog.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
     </head>
 
     <body>
@@ -27,7 +33,7 @@
                 <nav class="header-actions" aria-label="Account">
                     <a href="login.html">Sign in</a>
                     <a href="about.html">About us</a>
-                    <a href="cart.html">Cart<span class="cart-count" aria-label="2 items">2</span></a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
                 </nav>
             </div>
         </header>
@@ -46,7 +52,7 @@
             <div class="wrap">
 
                 <!-- Hero: what the shop is + free trial -->
-                <section class="hero" aria-labelledby="hero-title">
+                <section class="hero" aria-labelledby="hero-title" data-hide-when-searching>
                     <div>
                         <h1 id="hero-title">Your own server and a private connection, minus the headache.</h1>
                         <p>Virtual machines you can boot in a minute and a VPN that keeps your browsing yours. Plain prices in reais, data centers in Brazil, and people who answer when you write.</p>
@@ -63,141 +69,45 @@
                     </aside>
                 </section>
 
-                <!-- Virtual machines -->
-                <!-- We have absolutely no idea if those prices are fair or out of this world -->
-                <div class="section-head" id="vms">
-                    <h2>Virtual machines</h2>
-                    <a href="vms.html">See all virtual machines →</a>
+                <!-- Search results (shown when the page is opened as index.html?q=...) -->
+                <section id="search-results" aria-labelledby="results-title" hidden>
+                    <div class="section-head">
+                        <h2 id="results-title">Results</h2>
+                        <a href="index.html">Clear search</a>
+                    </div>
+                    <ul class="shelf-grid"></ul>
+                    <p class="empty" hidden>Try another word, or browse <a href="vms.html">virtual machines</a>, <a href="vpn.html">VPN plans</a> or <a href="addons.html">add-ons</a>.</p>
+                </section>
+
+                <!-- Product shelves: cards are drawn by catalog.js from the product data -->
+                <div data-hide-when-searching>
+                    <div class="section-head" id="vms">
+                        <h2>Virtual machines</h2>
+                        <a href="vms.html">See all virtual machines →</a>
                     <div>
                         <label class="visually-hidden" for="sort">Sort by</label>
                         <select id="sort">
-                            <option>Most popular</option>
-                            <option>Price: low to high</option>
-                            <option>Price: high to low</option>
+                            <option value="popular">Most popular</option>
+                            <option value="price-asc">Price: low to high</option>
+                            <option value="price-desc">Price: high to low</option>
+                            <option value="name">Name: A to Z</option>
                         </select>
                     </div>
-                </div>
-                <ul class="shelf-grid">
-                    <li class="product">
-                        <a class="photo" href="vms.html#nano-vm" aria-hidden="true" tabindex="-1">🖥️</a>
-                        <h3><a href="vms.html#nano-vm">Nano VM</a></h3>
-                        <p class="meta">Virtual machine · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>1 vCPU · 1 GB RAM</li><li>25 GB SSD</li><li>500 GB transfer</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">19,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="vms.html#standard-vm" aria-hidden="true" tabindex="-1">🖥️</a>
-                        <h3><a href="vms.html#standard-vm">Standard VM</a></h3>
-                        <p class="meta">Virtual machine · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>2 vCPU · 4 GB RAM</li><li>80 GB SSD</li><li>1 TB transfer</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">49,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="vms.html#performance-vm" aria-hidden="true" tabindex="-1">🚀</a>
-                        <h3><a href="vms.html#performance-vm">Performance VM</a></h3>
-                        <p class="meta">Virtual machine · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>8 vCPU · 32 GB RAM</li><li>320 GB SSD</li><li>4 TB transfer</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">249,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="vms.html#gpu-vm" aria-hidden="true" tabindex="-1">🎛️</a>
-                        <h3><a href="vms.html#gpu-vm">GPU VM</a></h3>
-                        <p class="meta">Virtual machine · <span class="stock low">Sold out</span></p>
-                        <ul class="specs"><li>16 vCPU · 64 GB RAM</li><li>1 × 24 GB GPU</li><li>500 GB NVMe</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">1.490,00</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button" disabled>Add</button>
-                        </div>
-                    </li>
-                </ul>
+                    </div>
+                    <ul class="shelf-grid" data-shelf="vms" data-compact aria-busy="true"></ul>
 
-                <!-- VPN -->
-                <!-- our main idea here if for maybe in the future redirect customers to actual VPN services, and our websites serves only as the middle ground -->
-                <!-- or perhaps we can sell third party VPNs -->
-                <div class="section-head" id="vpn">
-                    <h2>VPN</h2>
-                    <a href="vpn.html">See all VPN plans →</a>
-                </div>
-                <ul class="shelf-grid">
-                    <li class="product">
-                        <a class="photo" href="vpn.html#personal-vpn" aria-hidden="true" tabindex="-1">🔒</a>
-                        <h3><a href="vpn.html#personal-vpn">Personal VPN</a></h3>
-                        <p class="meta">VPN · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>Up to 5 devices</li><li>Servers in 12 countries</li><li>No activity logs</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">14,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="vpn.html#family-vpn" aria-hidden="true" tabindex="-1">👨‍👩‍👧</a>
-                        <h3><a href="vpn.html#family-vpn">Family VPN</a></h3>
-                        <p class="meta">VPN · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>Up to 10 devices</li><li>Servers in 12 countries</li><li>Ad and tracker blocking</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">24,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="vpn.html#business-vpn" aria-hidden="true" tabindex="-1">🏢</a>
-                        <h3><a href="vpn.html#business-vpn">Business VPN</a></h3>
-                        <p class="meta">VPN · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>Per team member</li><li>Shared admin panel</li><li>Single sign-on</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">29,90</span><span class="unit">/seat/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                </ul>
+                    <div class="section-head" id="vpn">
+                        <h2>VPN</h2>
+                        <a href="vpn.html">See all VPN plans →</a>
+                    </div>
+                    <ul class="shelf-grid" data-shelf="vpn" data-compact aria-busy="true"></ul>
 
-                <!-- Add-ons -->
-                <!-- This is up to debate, we're unsure if this part is going to make it tot the final deploy -->
-                <div class="section-head" id="addons">
-                    <h2>Add-ons</h2>
-                    <a href="addons.html">See all add-ons →</a>
+                    <div class="section-head" id="addons">
+                        <h2>Add-ons</h2>
+                        <a href="addons.html">See all add-ons →</a>
+                    </div>
+                    <ul class="shelf-grid" data-shelf="addons" data-compact aria-busy="true"></ul>
                 </div>
-                <ul class="shelf-grid">
-                    <li class="product">
-                        <a class="photo" href="addons.html#dedicated-ip" aria-hidden="true" tabindex="-1">🌐</a>
-                        <h3><a href="addons.html#dedicated-ip">Dedicated IP</a></h3>
-                        <p class="meta">Add-on for VPN or VM · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>A fixed IPv4 just for you</li><li>Useful for allow-lists</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">9,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="addons.html#daily-backups" aria-hidden="true" tabindex="-1">💾</a>
-                        <h3><a href="addons.html#daily-backups">Daily backups</a></h3>
-                        <p class="meta">Add-on for VMs · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>Snapshot every night</li><li>7 days kept</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">7,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="addons.html#extra-storage" aria-hidden="true" tabindex="-1">📦</a>
-                        <h3><a href="addons.html#extra-storage">Extra storage</a></h3>
-                        <p class="meta">Add-on for VMs · <span class="stock">Available</span></p>
-                        <ul class="specs"><li>+100 GB SSD volume</li><li>Attach to any VM</li></ul>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">12,90</span><span class="unit">/mo</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                </ul>
             </div>
         </main>
 

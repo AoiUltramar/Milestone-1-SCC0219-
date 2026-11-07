@@ -8,6 +8,12 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/login.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
     </head>
 
     <body>
@@ -27,7 +33,7 @@
                 <nav class="header-actions" aria-label="Account">
                     <a href="login.html" aria-current="page">Sign in</a>
                     <a href="about.html">About us</a>
-                    <a href="cart.html">Cart<span class="cart-count" aria-label="2 items">2</span></a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
                 </nav>
             </div>
         </header>
@@ -51,61 +57,61 @@
                 <div class="split even">
                     <section class="panel" aria-labelledby="signin-title">
                         <h2 id="signin-title">Sign in</h2>
-                        <form action="account.html">
+                        <form id="signin-form" action="account.html">
                             <div class="field">
                                 <label for="login-user">Email or username</label>
-                                <input id="login-user" type="text" autocomplete="username" required placeholder="e.g. admin">
+                                <input id="login-user" name="login" type="text" autocomplete="username" required placeholder="e.g. admin">
                             </div>
                             <div class="field">
                                 <label for="login-pass">Password</label>
-                                <input id="login-pass" type="password" autocomplete="current-password" required>
+                                <input id="login-pass" name="password" type="password" autocomplete="current-password" required>
                                 <p class="hint">Administrators: the default account is <strong>admin</strong> / <strong>admin</strong>.</p>
                             </div>
                             <button class="btn" type="submit">Sign in</button>
                         </form>
-                        <div class="notice warn" role="alert" style="margin-top: 1.25rem;">Sign-in failed: the email or password is incorrect. Check both fields and try again.</div>
-                        <p class="hint">Error state shown for the mockup.</p>
+                        <div class="notice warn" id="signin-error" role="alert" tabindex="-1" style="margin-top: 1.25rem;" hidden></div>
                     </section>
 
                     <section class="panel tinted" aria-labelledby="reg-title">
                         <h2 id="reg-title">Create an account</h2>
                         <p>New here? Your account comes with one free 14-day Standard VM trial.</p>
-                        <form action="trial.html">
+                        <form id="register-form" action="trial.html">
                             <div class="field">
                                 <label for="reg-name">Full name</label>
-                                <input id="reg-name" type="text" autocomplete="name" placeholder="e.g. Ana Souza" required>
+                                <input id="reg-name" name="name" type="text" autocomplete="name" placeholder="e.g. Ana Souza" required>
                             </div>
                             <div class="field-row">
                                 <div class="field">
                                     <label for="reg-email">Email</label>
-                                    <input id="reg-email" type="email" autocomplete="email" required>
+                                    <input id="reg-email" name="email" type="email" autocomplete="email" required>
                                 </div>
                                 <div class="field">
                                     <label for="reg-phone">Phone</label>
-                                    <input id="reg-phone" type="tel" autocomplete="tel" placeholder="(11) 91234-5678" required>
+                                    <input id="reg-phone" name="phone" type="tel" autocomplete="tel" placeholder="(11) 91234-5678" required>
                                 </div>
                             </div>
                             <div class="field">
                                 <label for="reg-address">Billing address</label>
-                                <input id="reg-address" type="text" autocomplete="street-address" placeholder="Street, number, apartment" required>
+                                <input id="reg-address" name="address" type="text" autocomplete="street-address" placeholder="Street, number, apartment" required>
                             </div>
                             <div class="field-row">
                                 <div class="field">
                                     <label for="reg-city">City</label>
-                                    <input id="reg-city" type="text" autocomplete="address-level2" value="São Paulo">
+                                    <input id="reg-city" name="city" type="text" autocomplete="address-level2" value="São Paulo">
                                 </div>
                                 <div class="field">
                                     <label for="reg-cep">CEP</label>
-                                    <input id="reg-cep" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000">
+                                    <input id="reg-cep" name="cep" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000">
                                 </div>
                             </div>
                             <div class="field">
                                 <label for="reg-pass">Password</label>
-                                <input id="reg-pass" type="password" autocomplete="new-password" minlength="8" required aria-describedby="reg-pass-hint">
+                                <input id="reg-pass" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="reg-pass-hint">
                                 <p class="hint" id="reg-pass-hint">At least 8 characters.</p>
                             </div>
                             <button class="btn" type="submit">Create account</button>
                         </form>
+                        <div class="notice warn" id="register-error" role="alert" tabindex="-1" style="margin-top: 1.25rem;" hidden></div>
                     </section>
                 </div>
             </div>

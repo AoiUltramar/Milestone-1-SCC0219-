@@ -8,6 +8,12 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/trial.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
     </head>
 
     <body>
@@ -27,7 +33,7 @@
                 <nav class="header-actions" aria-label="Account">
                     <a href="login.html">Sign in</a>
                     <a href="about.html">About us</a>
-                    <a href="cart.html">Cart<span class="cart-count" aria-label="2 items">2</span></a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
                 </nav>
             </div>
         </header>
@@ -53,36 +59,37 @@
                 <div class="split">
                     <section class="panel" aria-labelledby="setup-title" style="padding-top: 0;">
                         <h2 id="setup-title">Set up your trial VM</h2>
-                        <form action="account.html">
+                        <form id="trial-form" novalidate>
                             <fieldset class="option-grid field">
                                 <legend>Operating system</legend>
-                                <label class="option"><input type="radio" name="os" value="ubuntu" checked><span><strong>Ubuntu 24.04 LTS</strong>Most popular</span></label>
-                                <label class="option"><input type="radio" name="os" value="debian"><span><strong>Debian 12</strong>Lean and stable</span></label>
-                                <label class="option"><input type="radio" name="os" value="fedora"><span><strong>Fedora 40</strong>Latest packages</span></label>
-                                <label class="option"><input type="radio" name="os" value="rocky"><span><strong>Rocky Linux 9</strong>Enterprise-style</span></label>
+                                <label class="option"><input type="radio" name="os" value="Ubuntu 24.04 LTS" checked><span><strong>Ubuntu 24.04 LTS</strong>Most popular</span></label>
+                                <label class="option"><input type="radio" name="os" value="Debian 12"><span><strong>Debian 12</strong>Lean and stable</span></label>
+                                <label class="option"><input type="radio" name="os" value="Fedora 40"><span><strong>Fedora 40</strong>Latest packages</span></label>
+                                <label class="option"><input type="radio" name="os" value="Rocky Linux 9"><span><strong>Rocky Linux 9</strong>Enterprise-style</span></label>
                             </fieldset>
 
                             <fieldset class="option-grid field">
                                 <legend>Data center</legend>
-                                <label class="option"><input type="radio" name="region" value="sp" checked><span><strong>São Paulo</strong>Lowest latency for most of Brazil</span></label>
-                                <label class="option"><input type="radio" name="region" value="rj"><span><strong>Rio de Janeiro</strong>Southeast backup site</span></label>
-                                <label class="option"><input type="radio" name="region" value="for"><span><strong>Fortaleza</strong>Closest to the Northeast</span></label>
+                                <label class="option"><input type="radio" name="region" value="São Paulo" checked><span><strong>São Paulo</strong>Lowest latency for most of Brazil</span></label>
+                                <label class="option"><input type="radio" name="region" value="Rio de Janeiro"><span><strong>Rio de Janeiro</strong>Southeast backup site</span></label>
+                                <label class="option"><input type="radio" name="region" value="Fortaleza"><span><strong>Fortaleza</strong>Closest to the Northeast</span></label>
                             </fieldset>
 
                             <div class="field">
                                 <label for="hostname">Server name</label>
-                                <input id="hostname" type="text" placeholder="e.g. my-first-server" pattern="[a-z0-9-]+" aria-describedby="hostname-hint">
+                                <input id="hostname" name="hostname" type="text" placeholder="e.g. my-first-server" pattern="[a-z0-9-]+" aria-describedby="hostname-hint">
                                 <p class="hint" id="hostname-hint">Lowercase letters, numbers and dashes.</p>
                             </div>
 
                             <div class="field">
                                 <label for="ssh">SSH public key <span style="font-weight: 400;">(optional)</span></label>
-                                <textarea id="ssh" placeholder="ssh-ed25519 AAAA… you@laptop" aria-describedby="ssh-hint"></textarea>
+                                <textarea id="ssh" name="ssh" placeholder="ssh-ed25519 AAAA… you@laptop" aria-describedby="ssh-hint"></textarea>
                                 <p class="hint" id="ssh-hint">Leave empty and we'll email you a one-time password instead.</p>
                             </div>
 
-                            <label class="check"><input type="checkbox" required> <span>I agree to the fair use policy: no mining, no spam, no attacks on other networks.</span></label>
+                            <label class="check"><input type="checkbox" name="agree" required> <span>I agree to the fair use policy: no mining, no spam, no attacks on other networks.</span></label>
 
+                            <div class="notice warn" id="trial-error" role="alert" tabindex="-1" hidden></div>
                             <button class="btn big" type="submit">Start my free trial</button>
                         </form>
                     </section>
@@ -97,7 +104,7 @@
                             <li><span>Length</span><strong>14 days</strong></li>
                             <li><span>Price</span><strong>R$ 0,00</strong></li>
                         </ul>
-                        <div class="notice" style="margin-top: 1.25rem;">You need to be signed in to start a trial. <a href="login.html">Sign in or create an account</a>.</div>
+                        <div class="notice" id="trial-status" style="margin-top: 1.25rem;">Checking your account…</div>
                         <p class="hint" style="margin-top: 1rem;">After 14 days the VM pauses and your files are kept for 7 more days. Upgrade to a Standard VM (R$ 49,90/month) at any point to keep it running.</p>
                     </aside>
                 </div>
