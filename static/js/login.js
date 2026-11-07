@@ -22,8 +22,16 @@
     // Already signed in? Skip the form, unless they came here because their
     // account can't open the page they wanted: then explain, and let them
     // sign in with another account.
+    const fromGuard = new URLSearchParams(location.search).get("guard") === "1";
     Auth.currentUser().then(user => {
         if (!user) return;
+        // The page we came from just found nobody signed in, yet this page
+        // sees an account that may open it: the two pages don't share their
+        // saved data. Going back would loop forever, so explain instead.
+        if (fromGuard && validNext && Auth.canOpen(user, validNext)) {
+            UI.showError(signInError, UI.storageHelp());
+            return;
+        }
         if (validNext && !Auth.canOpen(user, validNext)) {
             const needed = Auth.roleFor(validNext) === "admin" ? "an administrator" : "a customer";
             const current = user.role === "admin" ? "an administrator" : "a customer";

@@ -169,6 +169,7 @@ Os testes são automáticos, escritos com [Playwright](https://playwright.dev/),
 | T9 WebMCP | As ferramentas são registradas; um agente busca e adiciona ao carrinho com as mesmas regras; `set_stock` só existe para admins |
 | W1–W6 WebMCP real | Rodam no WebMCP **de verdade** do Chromium (não um falso): as ferramentas aparecem em todas as páginas; schemas válidos e iguais às opções da página; não existe ferramenta de pagar; `set_stock` só para admin; busca com filtros; argumentos inválidos são recusados com uma frase; limites de estoque; opções padrão; chamadas em paralelo não perdem itens nem passam do estoque; `view_cart`/`update_cart_item` com chaves inválidas; `go_to_checkout` para cliente, visitante e admin; `set_stock` para de funcionar se o admin sair em outra aba |
 | T10 Regressões | Renomear o admin padrão não quebra o login; produto excluído não bloqueia o pagamento; armazenamento cheio gera erro em vez de perder dados; juntar o carrinho do visitante respeita o estoque; apagar a quantidade não remove o item; teste grátis encerrado ou de usuário excluído devolve a VM ao estoque |
+| Firefox em `file://` | Com a configuração padrão do Firefox, entrar como admin não fica em loop e explica como abrir pelo servidor; todas as páginas mostram o aviso |
 | Celular | Cada página cabe numa tela de celular (Pixel 7) sem rolagem lateral e sem erros de JavaScript; comprar funciona no celular |
 
 O grupo T9 instala um `document.modelContext` falso e roda em qualquer navegador. Os grupos W1–W6 ([`tests/webmcp.spec.js`](tests/webmcp.spec.js)) usam o WebMCP real: o projeto `webmcp` do Playwright abre um Chrome/Chromium 146 ou mais novo instalado no sistema com a flag `--enable-features=WebMCP,WebMCPTesting` e chama as ferramentas por `navigator.modelContextTesting` (ou `document.modelContext.executeTool` nas versões novas), como um agente faria. O Chromium que vem com o Playwright é antigo demais para isso.
@@ -177,7 +178,7 @@ Para rodar os testes, veja o passo 5 de [Procedimentos de Build](#6-procedimento
 
 ## 5. Resultados dos Testes
 
-Última execução: 90 testes, 90 aprovados (41 no computador, 9 no celular e 40 no WebMCP real com Chromium 148). O grupo WebMCP também passou 5 vezes seguidas (200 execuções) sem falhas intermitentes.
+Última execução: 92 testes, 92 aprovados (41 no computador, 2 no Firefox em `file://`, 9 no celular e 40 no WebMCP real com Chromium 148). O grupo WebMCP também passou 5 vezes seguidas (200 execuções) sem falhas intermitentes.
 
 ```
   ✓ [desktop] T1 Catalog › home page lists every product from the data
@@ -217,7 +218,9 @@ Para rodar os testes, veja o passo 5 de [Procedimentos de Build](#6-procedimento
 
   ✓ [webmcp] W1–W6 › 40 tests against Chromium 148's real WebMCP
 
-  90 passed
+  ✓ [firefox-file] 2 tests (no sign-in loop on file://, warning banner)
+
+  92 passed
 ```
 
 Problema corrigido: quem estava logado com o papel errado para uma página (por exemplo, o admin abrindo `account.html`, ou entrando como admin por um link `login.html?next=account.html`) ficava preso indo e voltando entre a página e o login. Agora o login só segue o `next` se o papel puder abrir a página; se não puder, explica e deixa entrar com outra conta.
@@ -246,6 +249,8 @@ Problemas encontrados em revisão de código e corrigidos (grupo T10): mudar o n
    ```
    O navegador abre em `http://localhost:8080`, que leva a `html/index.html`.
    *Sem Node.js:* qualquer servidor HTTP serve, por exemplo `python3 -m http.server 8080` na pasta do projeto, e depois abra `http://localhost:8080`.
+
+   **Não abra os arquivos direto do disco (`file://`) no Firefox, Mullvad Browser ou Tor Browser.** Esses navegadores guardam dados separados para cada arquivo (`security.fileuri.strict_origin_policy`, ligado por padrão), então o login e o carrinho não passam de uma página para outra. A loja mostra um aviso nesse caso. No Chrome, `file://` funciona.
 4. Entre como administrador com **admin** / **admin**, ou crie uma conta de cliente na tela de login.
 
 **Para rodar os testes**
@@ -257,6 +262,8 @@ Problemas encontrados em revisão de código e corrigidos (grupo T10): mudar o n
    ```
    O Playwright inicia o servidor sozinho. Para ver o relatório com detalhes de cada teste: `npm run test:report`.
 
+   Os testes do Firefox em `file://` rodam quando o Firefox do Playwright está instalado: `npx playwright install firefox`.
+
    Os testes do WebMCP real rodam quando existe um Chrome/Chromium 146+ em `/usr/bin/chromium` ou `/usr/bin/google-chrome`; em outro lugar, informe o caminho: `WEBMCP_CHROME="/caminho/do/chrome" npm test`. Só eles: `npx playwright test --project=webmcp`.
 
 **Para experimentar o WebMCP**
@@ -266,6 +273,7 @@ Problemas encontrados em revisão de código e corrigidos (grupo T10): mudar o n
 ## 7. Problemas
 
 - O WebMCP ainda é experimental e só funciona em versões recentes do Chrome com o recurso ativado; a loja funciona normalmente sem ele.
+- Aberta como arquivo (`file://`) no Firefox, Mullvad ou Tor Browser, cada página tem seus próprios dados salvos, então o login e o carrinho não passam entre as páginas. Antes isso deixava o login preso indo e voltando entre o login e o admin; agora a loja detecta, para e explica que é preciso usar um servidor local (`npm start`).
 - Os dados ficam no navegador de cada pessoa: dois navegadores não compartilham estoque nem contas. Isso será resolvido com o servidor na versão final.
 
 ## 8. Comentários

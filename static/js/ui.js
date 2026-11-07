@@ -92,5 +92,35 @@ const UI = (() => {
         box.focus();
     }
 
-    return { esc, toast, photo, priceTag, stockText, productCard, sorters, formatDate, showError };
+    /* ---------- Opened as a file in a Firefox-based browser ---------- */
+    // Firefox, Mullvad Browser and Tor Browser give every file:// page its
+    // own separate storage (security.fileuri.strict_origin_policy, on by
+    // default), so sign-in and the cart don't carry from page to page. Those
+    // browsers report the origin of a file page as "null"; Chrome reports
+    // "file://" and shares storage, so it gets no warning.
+    const fileMode = location.protocol === "file:";
+    const isolatedFiles = fileMode && location.origin === "null";
+
+    function storageHelp() {
+        return fileMode
+            ? "Your browser keeps separate saved data for each page when the store is opened as a file " +
+              "(Firefox, Mullvad and Tor Browser do this), so signing in on one page doesn't reach the others. " +
+              "Open the store through a local web server instead: in the project folder run npm start " +
+              "(or python3 -m http.server 8080) and go to http://localhost:8080."
+            : "Your browser isn't sharing saved data between the pages of this site, so signing in can't " +
+              "reach the other pages. Allow site data (cookies and storage) for this site and reload.";
+    }
+
+    if (isolatedFiles) {
+        const banner = document.createElement("div");
+        banner.className = "notice warn file-mode-banner";
+        banner.setAttribute("role", "note");
+        banner.dataset.testid = "file-mode-banner";
+        banner.textContent = storageHelp();
+        const place = () => (document.querySelector("main .wrap") ?? document.body).prepend(banner);
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", place);
+        else place();
+    }
+
+    return { esc, toast, photo, priceTag, stockText, productCard, sorters, formatDate, showError, storageHelp };
 })();

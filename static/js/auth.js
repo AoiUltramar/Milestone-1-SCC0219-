@@ -199,7 +199,9 @@ const Auth = (() => {
         const user = await currentUser();
         if (!user || (role && user.role !== role)) {
             const back = encodeURIComponent(location.pathname.split("/").pop() + location.search);
-            location.replace("login.html?next=" + back);
+            // `guard=1` tells the login page this redirect came from a page
+            // that found nobody (allowed) signed in. See login.js.
+            location.replace("login.html?next=" + back + "&guard=1");
             return null;
         }
         return user;
