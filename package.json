@@ -1,0 +1,14 @@
+{
+  "name": "cache-and-carry",
+  "private": true,
+  "description": "Cache & Carry online store (SCC0219). Client-side app; tests use Playwright.",
+  "scripts": {
+    "start": "http-server . -p 8080 -c-1 -o",
+    "test": "playwright test",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "http-server": "14.1.1"
+  }
+}

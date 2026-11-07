@@ -1,131 +1,144 @@
 <!DOCTYPE html>
-
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Cart · Cache & Carry Supermarket</title>
+        <title>Cart · Cache & Carry</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/cart-page.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
     </head>
 
-    <body style="background-color: rgb(174, 174, 174);">
+    <body>
         <a class="skip-link" href="#main">Skip to content</a>
 
-        <header class="site-header" style="background-color: antiquewhite;">
+        <header class="site-header">
             <div class="wrap">
-            <a class="logo" href="index.html" style="color: black;"><span class="logo-mark">
-                <img src="../static/logo.png" alt="" width="30" height="30">
-            </span>Cache & Carry</a>
-            <form class="search" role="search" action="#">
-                <label for="q" class="visually-hidden">Search products</label>
-                <input id="q" type="search" placeholder="Search electricity, RAM, datasets…" style="color: black;">
-                <button class="btn" type="submit" style="background-color: aquamarine; color: black;">Search</button>
-            </form>
-            <nav class="header-actions" aria-label="Account">
-                <a href="login.html" style="color: black;">Sign in</a>
-                <a href="about.html" style="color: black;">About us</a>
-                <a href="cart.html" aria-current="page" style="color: black;">Cart<span class="cart-count" aria-label="3 items">3</span></a>
-            </nav>
+                <a class="logo" href="index.html">
+                    <span class="logo-mark"><img src="../static/logo.png" alt="" width="36" height="36"></span>
+                    <span>Cache &amp; Carry<small>Cloud servers &amp; VPN</small></span>
+                </a>
+                <form class="search" role="search" action="index.html">
+                    <label for="q" class="visually-hidden">Search plans</label>
+                    <input id="q" name="q" type="search" placeholder="Search VMs, VPN plans, add-ons…">
+                    <button class="btn" type="submit">Search</button>
+                </form>
+                <nav class="header-actions" aria-label="Account">
+                    <a href="login.html">Sign in</a>
+                    <a href="about.html">About us</a>
+                    <a href="cart.html" aria-current="page">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
+                </nav>
             </div>
         </header>
 
-        <nav class="aisles" aria-label="Aisles" style="background-color: aquamarine;">
+        <nav class="aisles" aria-label="Categories">
             <ul>
-                <li><a href="index.html" style="color: black;">All</a></li>
-                <li><a href="#" style="color: black;">Health & Pharmacy</a></li>
-                <li><a href="#" style="color: black;">Drinks</a></li>
-                <li><a href="#" style="color: black;">Snacks</a></li>
-                <li><a href="#" style="color: black;">Cleaning</a></li>
+                <li><a href="index.html">All</a></li>
+                <li><a href="vms.html">Virtual machines</a></li>
+                <li><a href="vpn.html">VPN</a></li>
+                <li><a href="addons.html">Add-ons</a></li>
+                <li class="aisle-trial"><a href="trial.html">Free VM trial</a></li>
             </ul>
         </nav>
 
         <main id="main">
             <div class="wrap">
-                <h1>Your cart</h1>
-                <p>Review your supplies before sending them to your rack.</p>
+                <div class="page-head">
+                    <h1>Your cart</h1>
+                    <p>Plans are billed monthly. You can cancel any time from your account.</p>
+                </div>
 
-                <div class="split even">
-                    <!-- Cart summary -->
+                <!-- Shown after a successful payment -->
+                <section class="panel tinted order-done" id="order-done" aria-labelledby="done-title" tabindex="-1" hidden>
+                    <p class="eyebrow">Order placed</p>
+                    <h2 id="done-title">Thanks! Your services are being set up.</h2>
+                    <p id="done-summary"></p>
+                    <div class="actions">
+                        <a class="btn" href="account.html">See my orders</a>
+                        <a class="btn secondary" href="index.html">Keep shopping</a>
+                    </div>
+                </section>
+
+                <div class="split" id="cart-area">
                     <section class="panel" aria-labelledby="cart-title">
-                        <h2 id="cart-title">Current order</h2>
+                        <h2 id="cart-title" tabindex="-1">Current order</h2>
 
-                        <div class="table-scroll">
-                            <table>
-                                <caption class="visually-hidden">Products currently in the cart</caption>
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Quantity</th>
-                                        <th>Price</th>
-                                        <th>Total</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>🥤 Sparkling RAM</td>
-                                        <td>
-                                            <label class="visually-hidden" for="ram-quantity">Sparkling RAM quantity</label>
-                                            <input id="ram-quantity" type="number" min="1" max="20" value="2" style="width: 4rem;">
-                                        </td>
-                                        <td>R$ 14,90</td>
-                                        <td>R$ 29,80</td>
-                                        <td><button class="btn small" type="button">Remove</button></td>
-                                    </tr>
-                                    <tr>
-                                        <td>🍟 LAN cable fries</td>
-                                        <td>
-                                            <label class="visually-hidden" for="fries-quantity">LAN cable fries quantity</label>
-                                            <input id="fries-quantity" type="number" min="1" max="15" value="1" style="width: 4rem;">
-                                        </td>
-                                        <td>R$ 12,90</td>
-                                        <td>R$ 12,90</td>
-                                        <td><button class="btn small" type="button">Remove</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="notice" id="cart-empty" hidden>
+                            Your cart is empty. <a href="vms.html">Browse virtual machines</a> or <a href="vpn.html">VPN plans</a>.
                         </div>
 
-                        <p><strong>3 items</strong></p>
-                        <p><strong>Order total: R$ 42,70</strong></p>
+                        <div id="cart-filled">
+                            <div class="table-scroll">
+                                <table>
+                                    <caption class="visually-hidden">Plans currently in the cart</caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Plan</th>
+                                            <th scope="col">Quantity</th>
+                                            <th scope="col" class="num">Price</th>
+                                            <th scope="col" class="num">Total</th>
+                                            <th scope="col"><span class="visually-hidden">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cart-lines"></tbody>
+                                </table>
+                            </div>
 
-                        <p>
-                            <a class="btn secondary" href="index.html">Continue shopping</a>
-                            <button class="btn" type="button" style="background-color: aquamarine; color: black;">Update cart</button>
-                        </p>
+                            <div class="totals">
+                                <div><span id="cart-count-text">0 items</span><span id="cart-subtotal">R$ 0,00</span></div>
+                                <div class="grand"><span>Monthly total</span><span id="cart-total">R$ 0,00</span></div>
+                            </div>
+
+                            <div class="actions">
+                                <a class="btn secondary" href="index.html">Continue shopping</a>
+                                <button class="btn secondary" type="button" id="empty-cart">Empty cart</button>
+                            </div>
+                        </div>
                     </section>
 
-                    <!-- Payment mockup -->
-                    <section class="panel tinted" aria-labelledby="payment-title">
+                    <!-- Card fields: any number is accepted (assignment rule); only the last 4 digits are saved. -->
+                    <section class="panel tinted" aria-labelledby="payment-title" id="payment">
                         <h2 id="payment-title">Payment</h2>
-                        <form action="index.html">
+                        <div class="notice" id="pay-signin" hidden>
+                            <a href="login.html?next=cart.html">Sign in or create an account</a> to pay. Your cart will be kept.
+                        </div>
+                        <div class="notice warn" id="pay-admin" hidden>
+                            You're signed in as an administrator. Sign in with a customer account to place orders.
+                        </div>
+                        <form id="pay-form" novalidate>
                             <div class="field">
                                 <label for="card-name">Name on card</label>
-                                <input id="card-name" type="text" autocomplete="cc-name" placeholder="Human operator" required>
+                                <input id="card-name" name="name" type="text" autocomplete="cc-name" placeholder="e.g. PEDRO H HOLANDA" required>
                             </div>
-
                             <div class="field">
                                 <label for="card-number">Credit card number</label>
-                                <input id="card-number" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" required>
+                                <input id="card-number" name="number" type="text" inputmode="numeric" autocomplete="cc-number"
+                                       placeholder="0000 0000 0000 0000" maxlength="23" required>
                             </div>
-
                             <div class="field-row">
                                 <div class="field">
                                     <label for="card-expiration">Expiration</label>
-                                    <input id="card-expiration" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" required>
+                                    <input id="card-expiration" name="expiry" type="text" inputmode="numeric" autocomplete="cc-exp"
+                                           placeholder="MM/YY" maxlength="5" required>
                                 </div>
                                 <div class="field">
                                     <label for="card-cvv">CVV</label>
-                                    <input id="card-cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" required>
+                                    <input id="card-cvv" name="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" required>
                                 </div>
                             </div>
-
-                            <div class="notice" style="margin: 1.25rem 0;">
-                                <strong>Total to pay: R$ 42,70</strong>
+                            <div class="notice" style="margin: .25rem 0 1.25rem;">
+                                <strong>Due today: <span id="due-today">R$ 0,00</span></strong><br>
+                                <span class="hint">Then the same amount every month until you cancel.</span>
                             </div>
-
-                            <button class="btn" type="submit" style="background-color: aquamarine; color: black;">Pay and place order</button>
+                            <div class="notice warn" id="pay-error" role="alert" tabindex="-1" hidden></div>
+                            <button class="btn" type="submit" id="pay-button">Pay and activate</button>
                         </form>
                     </section>
                 </div>
@@ -134,9 +147,15 @@
 
         <footer class="site-footer">
             <div class="wrap">
-                <p style="margin: 0; color: black;">Cache & Carry · <a href="index.html" style="color: black;">Home</a> · <a href="about.html" style="color: black;">About us</a> · <a href="login.html" style="color: black;">Log in</a> · <a href="cart.html" style="color: black;">Cart</a></p>
+                <span>Cache &amp; Carry</span>
+                <nav aria-label="Footer">
+                    <a href="index.html">Home</a>
+                    <a href="trial.html">Free trial</a>
+                    <a href="about.html">About us</a>
+                    <a href="login.html">Log in</a>
+                    <a href="cart.html">Cart</a>
+                </nav>
             </div>
         </footer>
     </body>
-
 </html>

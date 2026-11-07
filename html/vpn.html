@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>VPN · Cache & Carry</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/catalog.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
+    </head>
+
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+
+        <header class="site-header">
+            <div class="wrap">
+                <a class="logo" href="index.html">
+                    <span class="logo-mark"><img src="../static/logo.png" alt="" width="36" height="36"></span>
+                    <span>Cache &amp; Carry<small>Cloud servers &amp; VPN</small></span>
+                </a>
+                <form class="search" role="search" action="index.html">
+                    <label for="q" class="visually-hidden">Search plans</label>
+                    <input id="q" name="q" type="search" placeholder="Search VMs, VPN plans, add-ons…">
+                    <button class="btn" type="submit">Search</button>
+                </form>
+                <nav class="header-actions" aria-label="Account">
+                    <a href="login.html">Sign in</a>
+                    <a href="about.html">About us</a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
+                </nav>
+            </div>
+        </header>
+
+        <nav class="aisles" aria-label="Categories">
+            <ul>
+                <li><a href="index.html">All</a></li>
+                <li><a href="vms.html">Virtual machines</a></li>
+                <li><a href="vpn.html" aria-current="page">VPN</a></li>
+                <li><a href="addons.html">Add-ons</a></li>
+                <li class="aisle-trial"><a href="trial.html">Free VM trial</a></li>
+            </ul>
+        </nav>
+
+        <main id="main">
+            <div class="wrap">
+                <div class="page-head">
+                    <p class="eyebrow">Category</p>
+                    <h1>VPN</h1>
+                    <p class="lead">A private connection for your phone, laptop and TV. We don't keep activity logs, and you can cancel any month.</p>
+                </div>
+
+                <section class="panel tinted category-config" aria-labelledby="config-title">
+                    <h2 id="config-title">Applies to every VPN plan you add</h2>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="exit">Default exit country</label>
+                            <select id="exit" data-option="Exit country">
+                                    <option>Brazil</option>
+                                    <option>United States</option>
+                                    <option>Portugal</option>
+                                    <option>Germany</option>
+                                    <option>Japan</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="section-head">
+                    <h2 id="plan-count" data-noun="plans">Loading…</h2>
+                    <div>
+                        <label class="visually-hidden" for="sort">Sort by</label>
+                        <select id="sort">
+                            <option value="popular">Most popular</option>
+                            <option value="price-asc">Price: low to high</option>
+                            <option value="price-desc">Price: high to low</option>
+                            <option value="name">Name: A to Z</option>
+                        </select>
+                    </div>
+                </div>
+
+                <ul class="shelf-grid" data-shelf="vpn" aria-busy="true" aria-labelledby="plan-count"></ul>
+
+                <p style="margin-top: 2rem;"><a href="index.html">← Back to all plans</a></p>
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="wrap">
+                <span>Cache &amp; Carry</span>
+                <nav aria-label="Footer">
+                    <a href="index.html">Home</a>
+                    <a href="trial.html">Free trial</a>
+                    <a href="about.html">About us</a>
+                    <a href="login.html">Log in</a>
+                    <a href="cart.html">Cart</a>
+                </nav>
+            </div>
+        </footer>
+    </body>
+</html>

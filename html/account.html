@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My account · Cache & Carry</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/account.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
+    </head>
+
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+
+        <header class="site-header">
+            <div class="wrap">
+                <a class="logo" href="index.html">
+                    <span class="logo-mark"><img src="../static/logo.png" alt="" width="36" height="36"></span>
+                    <span>Cache &amp; Carry<small>Cloud servers &amp; VPN</small></span>
+                </a>
+                <form class="search" role="search" action="index.html">
+                    <label for="q" class="visually-hidden">Search plans</label>
+                    <input id="q" name="q" type="search" placeholder="Search VMs, VPN plans, add-ons…">
+                    <button class="btn" type="submit">Search</button>
+                </form>
+                <nav class="header-actions" aria-label="Account">
+                    <a href="login.html">Sign in</a>
+                    <a href="about.html">About us</a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
+                </nav>
+            </div>
+        </header>
+
+        <nav class="aisles" aria-label="Categories">
+            <ul>
+                <li><a href="index.html">All</a></li>
+                <li><a href="vms.html">Virtual machines</a></li>
+                <li><a href="vpn.html">VPN</a></li>
+                <li><a href="addons.html">Add-ons</a></li>
+                <li class="aisle-trial"><a href="trial.html">Free VM trial</a></li>
+            </ul>
+        </nav>
+
+        <main id="main">
+            <div class="wrap">
+                <div class="page-head">
+                    <p class="eyebrow">My account</p>
+                    <h1 id="account-title">Hello!</h1>
+                    <p class="lead">Your details, your services and your past orders.</p>
+                </div>
+
+                <div class="split">
+                    <div>
+                        <section class="panel" aria-labelledby="trial-title" style="padding-top: 0;">
+                            <h2 id="trial-title">Free trial</h2>
+                            <div id="trial-box"></div>
+                        </section>
+
+                        <section class="panel" aria-labelledby="orders-title">
+                            <h2 id="orders-title">Orders</h2>
+                            <p id="orders-empty" hidden>No orders yet. <a href="index.html">See plans</a>.</p>
+                            <div class="table-scroll" id="orders-table" hidden>
+                                <table>
+                                    <caption class="visually-hidden">Your orders</caption>
+                                    <thead><tr><th scope="col">Order</th><th scope="col">Date</th><th scope="col">Items</th><th scope="col" class="num">Total</th><th scope="col">Card</th></tr></thead>
+                                    <tbody id="orders-body"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="panel tinted" aria-labelledby="details-title">
+                        <h2 id="details-title">Your details</h2>
+                        <form id="profile-form" novalidate>
+                            <div class="field">
+                                <label for="p-name">Full name</label>
+                                <input id="p-name" name="name" type="text" autocomplete="name" required>
+                            </div>
+                            <div class="field">
+                                <label for="p-email">Email</label>
+                                <input id="p-email" name="email" type="email" autocomplete="email" required>
+                            </div>
+                            <div class="field">
+                                <label for="p-phone">Phone</label>
+                                <input id="p-phone" name="phone" type="tel" autocomplete="tel">
+                            </div>
+                            <div class="field">
+                                <label for="p-street">Billing address</label>
+                                <input id="p-street" name="street" type="text" autocomplete="street-address">
+                            </div>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label for="p-city">City</label>
+                                    <input id="p-city" name="city" type="text" autocomplete="address-level2">
+                                </div>
+                                <div class="field">
+                                    <label for="p-cep">CEP</label>
+                                    <input id="p-cep" name="cep" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000">
+                                </div>
+                            </div>
+                            <details class="field">
+                                <summary>Change password</summary>
+                                <div class="field" style="margin-top: .75rem;">
+                                    <label for="p-current">Current password</label>
+                                    <input id="p-current" name="current" type="password" autocomplete="current-password">
+                                </div>
+                                <div class="field">
+                                    <label for="p-new">New password</label>
+                                    <input id="p-new" name="password" type="password" autocomplete="new-password" minlength="8" aria-describedby="p-new-hint">
+                                    <p class="hint" id="p-new-hint">At least 8 characters. Leave empty to keep the current one.</p>
+                                </div>
+                            </details>
+                            <div class="notice warn" id="profile-error" role="alert" tabindex="-1" hidden></div>
+                            <button class="btn" type="submit">Save changes</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="wrap">
+                <span>Cache &amp; Carry</span>
+                <nav aria-label="Footer">
+                    <a href="index.html">Home</a>
+                    <a href="trial.html">Free trial</a>
+                    <a href="about.html">About us</a>
+                    <a href="login.html">Log in</a>
+                    <a href="cart.html">Cart</a>
+                </nav>
+            </div>
+        </footer>
+    </body>
+</html>

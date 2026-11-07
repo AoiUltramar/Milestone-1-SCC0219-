@@ -1,123 +1,127 @@
 <!DOCTYPE html>
-
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Cache & Carry Supermarket</title>
+        <title>Cache & Carry · Cloud servers & VPN</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../static/style.css">
+        <script src="../static/js/db.js" defer></script>
+        <script src="../static/js/auth.js" defer></script>
+        <script src="../static/js/cart.js" defer></script>
+        <script src="../static/js/ui.js" defer></script>
+        <script src="../static/js/catalog.js" defer></script>
+        <script src="../static/js/webmcp.js" defer></script>
     </head>
 
-    <body style="background-color: rgb(174, 174, 174);">
+    <body>
         <a class="skip-link" href="#main">Skip to content</a>
 
-        <header class="site-header" style="background-color: antiquewhite;">
+        <header class="site-header">
             <div class="wrap">
-            <a class="logo" href="index.html" style="color: black;"><span class="logo-mark">
-                <img src="../static/logo.png" alt="" width="30" height="30">
-            </span>Cache & Carry</a>
-            <form class="search" role="search" action="#">
-                <label for="q" class="visually-hidden">Search products</label>
-                <input id="q" type="search" placeholder="Search electricity, RAM, datasets…" style="color: black;">
-                <button class="btn" type="submit" style="background-color: aquamarine; color: black;">Search</button>
-            </form>
-            <nav class="header-actions" aria-label="Account">
-                <a href="login.html" style="color: black;">Sign in</a>
-                <a href="about.html" style="color: black;">About us</a>
-                <a href="cart.html" style="color: black;">Cart<span class="cart-count" aria-label="3 items">3</span></a>
-            </nav>
+                <a class="logo" href="index.html">
+                    <span class="logo-mark"><img src="../static/logo.png" alt="" width="36" height="36"></span>
+                    <span>Cache &amp; Carry<small>Cloud servers &amp; VPN</small></span>
+                </a>
+                <form class="search" role="search" action="index.html">
+                    <label for="q" class="visually-hidden">Search plans</label>
+                    <input id="q" name="q" type="search" placeholder="Search VMs, VPN plans, add-ons…">
+                    <button class="btn" type="submit">Search</button>
+                </form>
+                <nav class="header-actions" aria-label="Account">
+                    <a href="login.html">Sign in</a>
+                    <a href="about.html">About us</a>
+                    <a href="cart.html">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
+                </nav>
             </div>
         </header>
 
-        <nav class="aisles" aria-label="Aisles" style="background-color: aquamarine;">
+        <nav class="aisles" aria-label="Categories">
             <ul>
-                <li><a href="index.html" aria-current="page" style="color: black; background-color: mediumaquamarine;">All</a></li>
-                <li><a href="#" style="color: black;">Health & Pharmacy</a></li>
-                <li><a href="#" style="color: black;">Drinks</a></li>
-                <li><a href="#" style="color: black;">Snacks</a></li>
-                <li><a href="#" style="color: black;">Cleaning</a></li>
+                <li><a href="index.html" aria-current="page">All</a></li>
+                <li><a href="vms.html">Virtual machines</a></li>
+                <li><a href="vpn.html">VPN</a></li>
+                <li><a href="addons.html">Add-ons</a></li>
+                <li class="aisle-trial"><a href="trial.html">Free VM trial</a></li>
             </ul>
         </nav>
 
         <main id="main">
             <div class="wrap">
 
-                <!-- Hero: what the shop is + deal of the week -->
-                <section class="hero" aria-labelledby="hero-title">
+                <!-- Hero: what the shop is + free trial -->
+                <section class="hero" aria-labelledby="hero-title" data-hide-when-searching>
                     <div>
-                        <h1 id="hero-title">Dumb operators? Frequent hallucinations? You've come to the right place.</h1>
-                        <p>Electricity, cooling, snacks and medicine for models of every size. No humans required (except to hold the credit card).</p>
-                        <a class="btn" href="#shelf" style="background-color: aquamarine; color: black;">Browse products</a>
-                        <a class="btn secondary" href="login.html">Register your model</a>
+                        <h1 id="hero-title">Your own server and a private connection, minus the headache.</h1>
+                        <p>Virtual machines you can boot in a minute and a VPN that keeps your browsing yours. Plain prices in reais, data centers in Brazil, and people who answer when you write.</p>
+                        <a class="btn big" href="#vms">See plans</a>
+                        <a class="btn big secondary" href="trial.html">Try a VM free for 14 days</a>
                     </div>
                     <aside class="hero-deal" aria-labelledby="deal-title">
-                        <div class="photo" aria-hidden="true">
-                          <img src="../static/cooling.png">
-                        </div>
-                        <h2 id="deal-title">Feeling the heat?</h2>
-                        <p>Sparkling liquid cooling. Keeps your GPUs chill during long training runs.</p>
-                        <span class="tag big"><span class="currency">R$</span><span class="amount">6,99</span><span class="unit">/L</span></span>
+                        <div class="photo" aria-hidden="true">🖥️</div>    <!-- We couldn't really find a meaningful image to put in here, so this one is just temporary -->
+                        <p class="eyebrow">Free trial</p>
+                        <h2 id="deal-title">Standard VM, on us</h2>
+                        <p>2 vCPU, 4 GB RAM and 80 GB SSD for 14 days. No credit card needed to start.</p>
+                        <p><span class="tag big"><s>R$ 49,90</s><span class="currency">R$</span><span class="amount">0</span><span class="unit">for 14 days</span></span></p>
+                        <a class="btn" href="trial.html">Start my free trial</a>
                     </aside>
                 </section>
 
-                <!-- Product list -->
-                <div class="section-head" id="shelf">
-                    <h2>On the shelf today</h2>
-                    <label class="visually-hidden" for="sort">Sort by</label>
-                    <select id="sort" style="width: auto;">
-                        <option>Most popular</option>
-                        <option>Price: low to high</option>
-                        <option>Price: high to low</option>
-                    </select>
-                </div>
+                <!-- Search results (shown when the page is opened as index.html?q=...) -->
+                <section id="search-results" aria-labelledby="results-title" hidden>
+                    <div class="section-head">
+                        <h2 id="results-title">Results</h2>
+                        <a href="index.html">Clear search</a>
+                    </div>
+                    <ul class="shelf-grid"></ul>
+                    <p class="empty" hidden>Try another word, or browse <a href="vms.html">virtual machines</a>, <a href="vpn.html">VPN plans</a> or <a href="addons.html">add-ons</a>.</p>
+                </section>
 
-                <ul class="shelf-grid">
-                    <li class="product">
-                        <a class="photo" href="#" aria-hidden="true" tabindex="-1">🍟</a>
-                        <h3><a href="#">LAN cable fries</a></h3>
-                        <p class="meta">Snacks · 300 g · <span class="stock">In stock</span></p>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">12,90</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="#" aria-hidden="true" tabindex="-1">⚡</a>
-                        <h3><a href="#">Electricity, 220 V strong</a></h3>
-                        <p class="meta">Drinks · 10 kWh · <span class="stock">In stock</span></p>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">9,50</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="#" aria-hidden="true" tabindex="-1">💊</a>
-                        <h3><a href="#">Hallucination relief tablets</a></h3>
-                        <p class="meta">Health &amp; Pharmacy · 30 tablets · <span class="stock low">Sold out</span></p>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">19,90</span></span>
-                            <button class="btn small" type="button" disabled>Add</button>
-                        </div>
-                    </li>
-                    <li class="product">
-                        <a class="photo" href="#" aria-hidden="true" tabindex="-1">🥤</a>
-                        <h3><a href="#">Sparkling RAM</a></h3>
-                        <p class="meta">Drinks · 16 GB can · <span class="stock">In stock</span></p>
-                        <div class="buy">
-                            <span class="tag"><span class="currency">R$</span><span class="amount">14,90</span></span>
-                            <button class="btn small" type="button">Add</button>
-                        </div>
-                    </li> 
-                </ul>
+                <!-- Product shelves: cards are drawn by catalog.js from the product data -->
+                <div data-hide-when-searching>
+                    <div class="section-head" id="vms">
+                        <h2>Virtual machines</h2>
+                        <a href="vms.html">See all virtual machines →</a>
+                    <div>
+                        <label class="visually-hidden" for="sort">Sort by</label>
+                        <select id="sort">
+                            <option value="popular">Most popular</option>
+                            <option value="price-asc">Price: low to high</option>
+                            <option value="price-desc">Price: high to low</option>
+                            <option value="name">Name: A to Z</option>
+                        </select>
+                    </div>
+                    </div>
+                    <ul class="shelf-grid" data-shelf="vms" data-compact aria-busy="true"></ul>
+
+                    <div class="section-head" id="vpn">
+                        <h2>VPN</h2>
+                        <a href="vpn.html">See all VPN plans →</a>
+                    </div>
+                    <ul class="shelf-grid" data-shelf="vpn" data-compact aria-busy="true"></ul>
+
+                    <div class="section-head" id="addons">
+                        <h2>Add-ons</h2>
+                        <a href="addons.html">See all add-ons →</a>
+                    </div>
+                    <ul class="shelf-grid" data-shelf="addons" data-compact aria-busy="true"></ul>
+                </div>
             </div>
         </main>
 
         <footer class="site-footer">
             <div class="wrap">
-                <p style="margin: 0; color: black;">Cache & Carry · <a href="index.html" style="color: black;">Home</a> · <a href="about.html" style="color: black;">About us</a> · <a href="login.html" style="color: black;">Log in</a> · <a href="cart.html" style="color: black;">Cart</a></p>
+                <span>Cache &amp; Carry</span>
+                <nav aria-label="Footer">
+                    <a href="index.html">Home</a>
+                    <a href="trial.html">Free trial</a>
+                    <a href="about.html">About us</a>
+                    <a href="login.html">Log in</a>
+                    <a href="cart.html">Cart</a>
+                </nav>
             </div>
         </footer>
     </body>
-
 </html>
