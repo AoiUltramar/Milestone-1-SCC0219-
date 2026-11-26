@@ -131,9 +131,8 @@ const Auth = (() => {
     async function deleteUser(id) {
         if (id === "u-admin") throw new Error("The default admin account can't be deleted.");
         if (id === readSession()) throw new Error("You can't delete the account you're signed in with.");
-        // Remove the user with their cart and trial in one step. A trial still
-        // running gives its Standard VM back to stock. Orders stay as sales records.
-        await DB.transaction(({ users, carts, trials, products }) => {
+        await DB.transaction(({ users, carts, trials, products, subscriptions }) => {
+            if (subscriptions.some(s => s.userId === id && s.status === "active")) throw new Error("Cancel active subscriptions before deleting this customer.");
             const drop = (list, test) => {
                 for (let i = list.length - 1; i >= 0; i--) if (test(list[i])) list.splice(i, 1);
             };
@@ -142,7 +141,7 @@ const Auth = (() => {
             drop(carts, c => c.id === id);
             trials.filter(t => t.userId === id && !t.released).forEach(t => {
                 const p = products.find(x => x.id === t.productId);
-                if (p) p.stock += 1;
+                if (p && p.category !== "vms") p.stock += 1;
             });
             drop(trials, t => t.userId === id);
         });
@@ -211,7 +210,7 @@ const Auth = (() => {
 
     // Pages only one role may open (the rest are open to everyone). login.js
     // uses this so it never sends someone to a page that would send them back.
-    const PAGE_ROLES = { "admin-products.html": "admin", "admin-users.html": "admin", "account.html": "customer" };
+    const PAGE_ROLES = { "admin-products.html": "admin", "admin-users.html": "admin", "admin-dashboard.html": "admin", "account.html": "customer" };
     const roleFor = page => PAGE_ROLES[String(page).split(/[?#]/)[0]] ?? null;
     const canOpen = (user, page) => !roleFor(page) || user?.role === roleFor(page);
 

@@ -40,8 +40,8 @@ const UI = (() => {
     }
 
     function stockText(product) {
-        if (product.stock <= 0) return `<span class="stock low">Sold out</span>`;
-        if (product.stock <= 10) return `<span class="stock low">Only ${product.stock} left</span>`;
+        if (product.stock <= 0) return `<span class="stock low">${product.category === "vms" ? "No capacity" : "Sold out"}</span>`;
+        if (product.stock <= 10) return `<span class="stock low">Only ${product.stock} ${product.category === "vms" ? "available" : "left"}</span>`;
         return `<span class="stock">Available</span>`;
     }
 
@@ -58,7 +58,10 @@ const UI = (() => {
         const qty = compact ? "" : `
                 <label class="visually-hidden" for="${esc(p.id)}-qty">Quantity of ${esc(p.name)}</label>
                 <input id="${esc(p.id)}-qty" class="qty-input" type="number" min="1" max="${Math.max(1, p.stock)}" value="1"${soldOut ? " disabled" : ""}>`;
-        const trial = !compact && p.trial ? `<a class="btn small secondary" href="trial.html">Try free for 14 days</a>` : "";
+        const trialAvailable = Object.values(p.capacityByRegion ?? {}).some(n => n > 0);
+        const trial = !compact && p.trial ? (trialAvailable
+            ? `<a class="btn small secondary" href="trial.html">Try free for 14 days</a>`
+            : `<button class="btn small secondary" type="button" disabled>Try free for 14 days</button>`) : "";
         return `
         <li class="product" id="${esc(p.id)}" data-product-id="${esc(p.id)}">
             ${compact ? photo(p, "a", `href="${esc(link)}" tabindex="-1"`) : photo(p)}
@@ -69,7 +72,7 @@ const UI = (() => {
                 ${priceTag(p)}
                 <div class="buy-actions">${qty}
                     <button class="btn small add-btn" type="button" data-add="${esc(p.id)}"${soldOut ? " disabled" : ""}
-                        aria-label="Add ${esc(p.name)} to cart">${soldOut ? "Sold out" : "Add"}</button>
+                        aria-label="Add ${esc(p.name)} to cart">${soldOut ? (p.category === "vms" ? "No capacity" : "Sold out") : "Add"}</button>
                     ${trial}
                 </div>
             </div>

@@ -2,8 +2,7 @@
    db.js — the "server" for Milestone 2
    --------------------------------------------------------------------------
    The assignment allows simulating the back end in the browser. This file
-   is that simulation: every collection (products, users, carts, orders,
-   trials) is a JSON array saved in localStorage, and every call waits
+   is that simulation: every collection is a JSON array saved in localStorage, and every call waits
    100 ms like a network request would (the delay() trick from the spec).
 
    All functions are async and return copies, so page code can't change
@@ -113,20 +112,155 @@ const DB = (() => {
         addons: { name: "Add-ons",          meta: "Add-on", options: {} },
     };
 
+    /* ---------- Physical infrastructure ---------- */
+    const RESOURCES = ["cpu", "ram", "storage", "gpu"];
+    const regions = CATEGORIES.vms.options["Data center"];
+
+    function seedServers() {
+        return regions.map((region, i) => ({ id: `server-${i + 1}`, region, cpu: 32, ram: 128, storage: 2000, gpu: 0 }));
+    }
+
+    // VM requirements come from the same specifications shown in the catalog.
+    function requirements(product) {
+        const specs = Object.fromEntries(product.specs ?? []);
+        const cpu = /^(\d+)\s+(?:shared\s+)?vCPUs?$/i.exec(specs.CPU ?? "");
+        const ram = /^(\d+(?:\.\d+)?)\s+(GB|MB)(?:\s+RAM)?$/i.exec(specs.Memory ?? "");
+        const storage = /^(\d+(?:\.\d+)?)\s+(GB|TB)(?:\s+(?:SSD|NVMe))?$/i.exec(specs.Storage ?? "");
+        const gpu = specs.GPU ? /^(\d+)(?:\s*[×x]\s*24\s+GB)?$/i.exec(specs.GPU) : [null, "0"];
+        if (!cpu || !ram || !storage || !gpu || +cpu[1] < 1 || +ram[1] <= 0 || +storage[1] <= 0) {
+            throw new Error("VM specs need CPU (e.g. 2 vCPU), Memory (4 GB RAM), Storage (80 GB SSD), and optionally GPU (1 × 24 GB).");
+        }
+        return { cpu: +cpu[1], ram: +ram[1] / (ram[2].toUpperCase() === "MB" ? 1024 : 1),
+                 storage: +storage[1] * (storage[2].toUpperCase() === "TB" ? 1000 : 1), gpu: +gpu[1] };
+    }
+
+    function infrastructureState(tables) {
+        const now = Date.now();
+        const servers = tables.servers.map(s => ({ ...s, free: Object.fromEntries(RESOURCES.map(k => [k, s[k]])) }));
+        const active = [...tables.subscriptions.filter(s => s.status === "active" && Date.parse(s.endsAt) > now),
+                        ...tables.trials.filter(t => !t.released && Date.parse(t.endsAt) > now)];
+        active.forEach(record => (record.allocations ?? []).forEach(a => {
+            const server = servers.find(s => s.id === a.serverId);
+            if (server) RESOURCES.forEach(k => { server.free[k] -= a.resources[k] * a.qty; });
+        }));
+        return servers;
+    }
+
+    function slots(server, need) {
+        return Math.max(0, Math.min(...RESOURCES.filter(k => need[k] > 0).map(k => Math.floor(server.free[k] / need[k]))));
+    }
+
+    // First fit: every VM must fit on one physical host in its chosen region.
+    function allocate(servers, product, region, qty) {
+        if (!regions.includes(region) || !Number.isSafeInteger(qty) || qty < 1) throw new Error("Invalid VM region or quantity.");
+        const need = requirements(product);
+        const candidates = servers.filter(s => s.region === region);
+        if (candidates.reduce((n, s) => n + slots(s, need), 0) < qty) throw new Error(`Insufficient capacity for ${product.name} in ${region}.`);
+        const allocations = [];
+        for (const server of candidates) {
+            const count = Math.min(qty, slots(server, need));
+            if (!count) continue;
+            allocations.push({ serverId: server.id, qty: count, resources: { ...need } });
+            RESOURCES.forEach(k => { server.free[k] -= need[k] * count; });
+            qty -= count;
+            if (!qty) break;
+        }
+        return allocations;
+    }
+
+    function infrastructureTables() {
+        return Object.fromEntries(["products", "servers", "subscriptions", "trials"].map(n => [n, readRaw(n) ?? []]));
+    }
+
+    // Availability is derived, never decremented or restocked for a VM plan.
+    function availableProducts() {
+        const tables = infrastructureTables();
+        const servers = infrastructureState(tables);
+        return tables.products.map(p => {
+            if (p.category !== "vms") return p;
+            let need;
+            try { need = requirements(p); } catch { return { ...p, stock: 0, capacityByRegion: Object.fromEntries(regions.map(r => [r, 0])) }; }
+            const capacityByRegion = Object.fromEntries(regions.map(r => [r, servers.filter(s => s.region === r).reduce((n, s) => n + slots(s, need), 0)]));
+            return { ...p, stock: Object.values(capacityByRegion).reduce((a, b) => a + b, 0), capacityByRegion };
+        });
+    }
+
+    async function capacityFor(productId, options, items = []) {
+        await delay();
+        const tables = infrastructureTables();
+        const product = tables.products.find(p => p.id === productId);
+        if (!product) return 0;
+        if (product.category !== "vms") return Math.max(0, product.stock - items.filter(i => i.productId === productId).reduce((n, i) => n + i.qty, 0));
+        const servers = infrastructureState(tables);
+        try {
+            for (const i of items) {
+                const p = tables.products.find(p => p.id === i.productId);
+                if (p?.category === "vms") allocate(servers, p, i.options?.["Data center"] ?? regions[0], i.qty);
+            }
+            const need = requirements(product);
+            return servers.filter(s => s.region === (options?.["Data center"] ?? regions[0])).reduce((n, s) => n + slots(s, need), 0);
+        } catch { return 0; }
+    }
+
+    async function infrastructure() {
+        await delay();
+        return clone(infrastructureState(infrastructureTables()));
+    }
+
+    async function addServer(data) {
+        if ((await Auth.currentUser())?.role !== "admin") throw new Error("Only administrators can add servers.");
+        if (!regions.includes(data.region) || RESOURCES.some(k => !Number.isSafeInteger(data[k]) || data[k] < (k === "gpu" ? 0 : 1))) throw new Error("Enter a valid data center and whole resource capacities.");
+        return transaction(({ servers }) => {
+            const server = { id: newId("server"), region: data.region, ...Object.fromEntries(RESOURCES.map(k => [k, data[k]])) };
+            servers.push(server);
+            return server;
+        });
+    }
+
+    // Keep existing active services when upgrading a browser from the previous version.
+    function migrateServers() {
+        const tables = infrastructureTables();
+        tables.servers = seedServers();
+        const servers = infrastructureState(tables);
+        const records = [...tables.subscriptions.filter(s => s.status === "active" && Date.parse(s.endsAt) > Date.now()),
+                         ...tables.trials.filter(t => !t.released && Date.parse(t.endsAt) > Date.now())];
+        for (const record of records) {
+            const product = tables.products.find(p => p.id === record.productId);
+            if (product?.category !== "vms") continue;
+            const oldRegion = record.options?.["Data center"] ?? record.region;
+            const region = regions.includes(oldRegion) ? oldRegion : regions[0];
+            const qty = record.qty ?? 1;
+            try { record.allocations = allocate(servers, product, region, qty); }
+            catch {
+                let need;
+                try { need = requirements(product); } catch { record.capacityMigrationPending = true; continue; }
+                const server = { id: `legacy-${record.id}`, region, ...Object.fromEntries(RESOURCES.map(k => [k, need[k] * qty])) };
+                tables.servers.push(server);
+                servers.push({ ...server, free: Object.fromEntries(RESOURCES.map(k => [k, server[k]])) });
+                record.allocations = allocate(servers, product, region, qty);
+            }
+        }
+        writeRaw("products", tables.products.map(p => p.category === "vms" ? { ...p, stock: 0 } : p));
+        writeRaw("subscriptions", tables.subscriptions);
+        writeRaw("trials", tables.trials);
+        writeRaw("servers", tables.servers);
+    }
+
     // Runs once per browser (or again after VERSION changes).
     function seedIfNeeded() {
         if (readRaw("version") === VERSION) return;
-        writeRaw("products", SEED_PRODUCTS);
+        writeRaw("products", SEED_PRODUCTS.map(p => p.category === "vms" ? { ...p, stock: 0 } : p));
         writeRaw("users", []);      // auth.js adds the admin/admin account
         writeRaw("carts", []);
         writeRaw("orders", []);
         writeRaw("trials", []);
+        writeRaw("subscriptions", []);
+        writeRaw("servers", seedServers());
         writeRaw("version", VERSION);
     }
     seedIfNeeded();
+    if (readRaw("servers") === null) migrateServers();
 
-    // A trial VM stops at the end of its 14 days, so its unit of Standard VM
-    // stock goes back on sale. Runs on every page load.
     function releaseEndedTrials() {
         const trials = readRaw("trials") ?? [];
         const now = Date.now();
@@ -135,7 +269,7 @@ const DB = (() => {
         const products = readRaw("products") ?? [];
         ended.forEach(t => {
             const p = products.find(x => x.id === t.productId);
-            if (p) p.stock += 1;
+            if (p && p.category !== "vms") p.stock += 1;
             t.released = true;
         });
         try {
@@ -145,6 +279,40 @@ const DB = (() => {
     }
     releaseEndedTrials();
 
+    /* ---------- Subscriptions ---------- */
+    const DURATIONS = [1, 3, 12];
+    const money = value => Math.round((value + Number.EPSILON) * 100) / 100;
+
+    // Keep the same day of the month, clamping to the last day if needed.
+    function subscriptionEnd(start, months) {
+        const end = new Date(start);
+        const day = end.getUTCDate();
+        end.setUTCDate(1);
+        end.setUTCMonth(end.getUTCMonth() + months);
+        const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0)).getUTCDate();
+        end.setUTCDate(Math.min(day, last));
+        return end.toISOString();
+    }
+
+    function releaseSubscription(s, products) {
+        const p = products.find(x => x.id === s.productId);
+        if (p && p.category !== "vms") p.stock += s.qty;
+    }
+
+    function releaseEndedSubscriptions({ subscriptions, products }) {
+        subscriptions.filter(s => s.status === "active" && Date.parse(s.endsAt) <= Date.now()).forEach(s => {
+            releaseSubscription(s, products);
+            s.status = "expired";
+        });
+    }
+
+    async function refreshSubscriptions() {
+        if ((readRaw("subscriptions") ?? []).some(s => s.status === "active" && Date.parse(s.endsAt) <= Date.now()) ||
+            (readRaw("trials") ?? []).some(t => !t.released && Date.parse(t.endsAt) <= Date.now())) {
+            await transaction(() => {});
+        }
+    }
+
     /* ---------- Generic CRUD ---------- */
     function newId(prefix) {
         return prefix + "-" + (crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2));
@@ -152,18 +320,21 @@ const DB = (() => {
 
     async function list(name) {
         await delay();
-        return clone(readRaw(name) ?? []);
+        if (["products", "subscriptions", "trials", "servers"].includes(name)) await refreshSubscriptions();
+        return clone(name === "products" ? availableProducts() : readRaw(name) ?? []);
     }
 
     async function get(name, id) {
         await delay();
-        return clone((readRaw(name) ?? []).find(item => item.id === id)) ?? null;
+        if (["products", "subscriptions", "trials", "servers"].includes(name)) await refreshSubscriptions();
+        return clone((name === "products" ? availableProducts() : readRaw(name) ?? []).find(item => item.id === id)) ?? null;
     }
 
     async function insert(name, data) {
         await delay();
         const items = readRaw(name) ?? [];
         const item = { ...clone(data), id: data.id || newId(name.slice(0, -1)) };
+        if (name === "products" && item.category === "vms") { requirements(item); item.stock = 0; }
         if (items.some(i => i.id === item.id)) throw new Error(`An item with id "${item.id}" already exists.`);
         items.push(item);
         writeRaw(name, items);
@@ -172,9 +343,30 @@ const DB = (() => {
 
     async function update(name, id, changes) {
         await delay();
+        if (name === "products") await refreshSubscriptions();
         const items = readRaw(name) ?? [];
         const index = items.findIndex(i => i.id === id);
         if (index === -1) throw new Error("Item not found.");
+        if (name === "products") {
+            const old = items[index];
+            const next = { ...old, ...changes };
+            if (old.category !== next.category) {
+                // A category change must not alter the resource model of an active service.
+                const now = Date.now();
+                const active = (readRaw("subscriptions") ?? []).some(s => s.productId === id && s.status === "active" && Date.parse(s.endsAt) > now) ||
+                    (readRaw("trials") ?? []).some(t => t.productId === id && !t.released && Date.parse(t.endsAt) > now);
+                if (active) throw new Error("This product has active services and its category cannot be changed.");
+                if (next.category === "vms") {
+                    requirements(next);
+                    changes = { ...changes, stock: 0 };
+                } else if (!Number.isSafeInteger(next.stock) || next.stock < 0) {
+                    throw new Error("Stock must be a whole number of zero or more.");
+                }
+            } else if (next.category === "vms") {
+                requirements(next);
+                if (Object.hasOwn(changes, "stock")) throw new Error("VM capacity is derived from physical servers. Manage infrastructure on the dashboard.");
+            }
+        }
         items[index] = { ...items[index], ...clone(changes), id };   // the id never changes
         writeRaw(name, items);
         return clone(items[index]);
@@ -193,8 +385,10 @@ const DB = (() => {
     // stock, sales, the order and the cart change in one step).
     async function transaction(fn) {
         await delay();
-        const names = ["products", "users", "carts", "orders", "trials"];
+        const names = ["products", "users", "carts", "orders", "trials", "subscriptions", "servers"];
         const tables = Object.fromEntries(names.map(n => [n, readRaw(n) ?? []]));
+        releaseEndedSubscriptions(tables);
+        tables.trials.filter(t => !t.released && Date.parse(t.endsAt) <= Date.now()).forEach(t => { t.released = true; });
         const result = fn(tables);             // throw inside fn to cancel everything
         // If a write fails halfway (storage full), put back the tables
         // already written so the change is all-or-nothing.
@@ -222,5 +416,6 @@ const DB = (() => {
     const formatPrice  = value => "R$ " + formatAmount(value);          // -> "R$ 1.490,00"
 
     return { delay, list, get, insert, update, remove, transaction, reset, newId,
-             CATEGORIES, formatAmount, formatPrice };
+             CATEGORIES, DURATIONS, money, subscriptionEnd, releaseSubscription, formatAmount, formatPrice,
+             requirements, allocate, infrastructureState, capacityFor, infrastructure, addServer };
 })();

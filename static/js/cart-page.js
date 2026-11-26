@@ -24,28 +24,40 @@
             const options = Object.entries(line.options || {}).map(([k, v]) => `${UI.esc(k)}: ${UI.esc(v)}`).join(" · ");
             return `
             <tr data-key="${UI.esc(line.key)}">
-                <td>${UI.esc(p.image ? "" : p.icon)} ${UI.esc(p.name)}${options ? `<br><span class="hint">${options}</span>` : ""}</td>
+                <td>${UI.esc(p.image ? "" : p.icon)} ${UI.esc(p.name)}${options ? `<br><span class="hint">${options}</span>` : ""}
+                    <label class="hint" for="term-${i}">Subscription term</label>
+                    <select id="term-${i}" class="line-term">
+                        ${DB.DURATIONS.map(m => `<option value="${m}"${m === (line.months ?? 1) ? " selected" : ""}>${m === 12 ? "1 year" : m + (m === 1 ? " month" : " months")}</option>`).join("")}
+                    </select></td>
                 <td>
                     <label class="visually-hidden" for="qty-${i}">${UI.esc(p.name)} quantity</label>
-                    <input id="qty-${i}" class="line-qty" type="number" min="1" max="${p.stock}" value="${line.qty}">
+                    <input id="qty-${i}" class="line-qty" type="number" min="1" max="${Math.max(1, p.capacityByRegion?.[line.options?.["Data center"]] ?? p.stock)}" value="${line.qty}">
                 </td>
                 <td class="num">${DB.formatPrice(p.price)}<span class="hint">${UI.esc(p.unit)}</span></td>
-                <td class="num">${DB.formatPrice(p.price * line.qty)}</td>
+                <td class="num">${DB.formatPrice(p.price * line.qty * (line.months ?? 1))}</td>
                 <td><button class="btn small secondary remove-line" type="button" aria-label="Remove ${UI.esc(p.name)}">Remove</button></td>
             </tr>`;
         }).join("");
     }
 
-    // Quantity typed in a row: save it (Cart caps it at the stock).
     tbody.addEventListener("change", async (e) => {
+        if (e.target.classList.contains("line-term")) {
+            const key = e.target.closest("tr").dataset.key;
+            e.target.disabled = true;
+            $("pay-button").disabled = true;
+            try { await Cart.setDuration(key, Number(e.target.value)); }
+            catch (err) { UI.toast(err.message, "error"); }
+            return render();
+        }
         if (!e.target.classList.contains("line-qty")) return;
         const key = e.target.closest("tr").dataset.key;
         const wanted = Number(e.target.value);
         // An empty or invalid box puts the old quantity back instead of removing the line.
         if (e.target.value.trim() === "" || !Number.isFinite(wanted) || wanted < 0) return render();
+        const vm = (await Cart.get()).lines.find(l => l.key === key)?.product.category === "vms";
         const kept = await Cart.setQty(key, wanted);
-        if (kept > 0 && kept < wanted) UI.toast(`Only ${kept} available in stock.`, "error");
-        if (kept === 0 && wanted > 0) UI.toast("That product is sold out, so it was removed from your cart.", "error");
+        if (kept > 0 && kept < wanted) UI.toast(vm ? `Only ${kept} available within capacity.` : `Only ${kept} available in stock.`, "error");
+        if (kept === 0 && wanted > 0) UI.toast(vm ? "That product has no remaining capacity, so it was removed from your cart." : "That product is sold out, so it was removed from your cart.", "error");
         await render();
     });
 

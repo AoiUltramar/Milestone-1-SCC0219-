@@ -8,7 +8,6 @@
 
    Rules from the assignment:
    - you can't put more in the cart than there is in stock;
-   - paying subtracts the quantity from stock and adds it to "sold";
    - the cart is only emptied by paying or by the customer.
 
    Needs db.js and auth.js loaded first.
@@ -33,8 +32,12 @@ const Cart = (() => {
         document.dispatchEvent(new CustomEvent("cart:change"));
     }
 
-    const lineKey = (productId, options = {}) =>
-        productId + "|" + Object.entries(options).sort().map(([k, v]) => k + "=" + v).join("&");
+    const lineKey = (productId, options = {}, months = 1) =>
+        productId + "|" + Object.entries(options).sort().map(([k, v]) => k + "=" + v).join("&") + (months === 1 ? "" : `|${months}mo`);
+    const duration = months => {
+        if (!DB.DURATIONS.includes(months)) throw new Error("Choose 1, 3 or 12 months.");
+        return months;
+    };
 
     /* ---------- Reading ---------- */
 
@@ -45,9 +48,10 @@ const Cart = (() => {
         const lines = items
             .map(item => ({ ...item, product: products.find(p => p.id === item.productId) }))
             .filter(line => line.product);       // product deleted by an admin
-        const total = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
+        const monthlyTotal = DB.money(lines.reduce((sum, l) => sum + l.product.price * l.qty, 0));
+        const total = DB.money(lines.reduce((sum, l) => sum + l.product.price * l.qty * (l.months ?? 1), 0));
         const count = lines.reduce((sum, l) => sum + l.qty, 0);
-        return { owner, lines, total, count };
+        return { owner, lines, total, monthlyTotal, count };
     }
 
     // How many of this product are already in the cart (all option variants).
@@ -81,8 +85,8 @@ const Cart = (() => {
         return out;
     }
 
-    // Returns { added, capped }; `capped` is true when stock limited the amount.
-    async function add(productId, qty = 1, options = {}) {
+    async function add(productId, qty = 1, options = {}, months = 1) {
+        duration(months);
         qty = Math.floor(Number(qty));
         if (!(qty >= 1)) throw new Error("Choose a quantity of at least 1.");
         const product = await DB.get("products", productId);
@@ -91,17 +95,18 @@ const Cart = (() => {
 
         const owner = await ownerId();
         const items = await readItems(owner);
-        const room = product.stock - qtyInCart(items, productId);
+        const room = await DB.capacityFor(productId, options, items);
         if (room <= 0) {
+            if (product.category === "vms") throw new Error(`${product.name} has no remaining capacity in ${options["Data center"]} for this cart.`);
             throw new Error(product.stock === 0
                 ? `${product.name} is sold out.`
                 : `You already have all ${product.stock} available ${product.name} in your cart.`);
         }
         const added = Math.min(qty, room);
-        const key = lineKey(productId, options);
+        const key = lineKey(productId, options, months);
         const line = items.find(i => i.key === key);
         if (line) line.qty += added;
-        else items.push({ key, productId, qty: added, options });
+        else items.push({ key, productId, qty: added, options, months });
         await writeItems(owner, items);
         return { added, capped: added < qty, product };
     }
@@ -114,13 +119,31 @@ const Cart = (() => {
         const line = items.find(i => i.key === key);
         if (!line) return 0;
         const product = await DB.get("products", line.productId);
-        const others = qtyInCart(items, line.productId) - line.qty;
-        // Never more than the stock left after the other variants of this product.
-        const kept = product ? Math.min(qty, Math.max(0, product.stock - others)) : 0;
+        const kept = product ? Math.min(qty, await DB.capacityFor(line.productId, line.options, items.filter(i => i !== line))) : 0;
         if (kept === 0) return remove(key).then(() => 0);
         line.qty = kept;
         await writeItems(owner, items);
         return line.qty;
+    }
+
+    // Changing the term merges lines with the same product and choices.
+    async function setDuration(key, months) {
+        duration(months);
+        const owner = await ownerId();
+        const items = await readItems(owner);
+        const line = items.find(i => i.key === key);
+        if (!line) return;
+        const nextKey = lineKey(line.productId, line.options, months);
+        if (nextKey === key) return;
+        const other = items.find(i => i.key === nextKey);
+        if (other) {
+            other.qty += line.qty;
+            await writeItems(owner, items.filter(i => i !== line));
+        } else {
+            line.key = nextKey;
+            line.months = months;
+            await writeItems(owner, items);
+        }
     }
 
     async function remove(key) {
@@ -141,7 +164,7 @@ const Cart = (() => {
             // Same stock rule as add(): the merged cart can't hold more than exists.
             const product = products.find(p => p.id === g.productId);
             if (!product) continue;
-            const add = Math.min(g.qty, product.stock - qtyInCart(items, g.productId));
+            const add = Math.min(g.qty, await DB.capacityFor(g.productId, g.options, items));
             if (add <= 0) continue;
             const line = items.find(i => i.key === g.key);
             if (line) line.qty += add; else items.push({ ...g, qty: add });
@@ -171,7 +194,7 @@ const Cart = (() => {
         if (user.role !== "customer") throw new Error("Administrator accounts can't place orders. Sign in as a customer.");
         const last4 = validateCard(card);
 
-        const order = await DB.transaction(({ products, carts, orders }) => {
+        const order = await DB.transaction(({ products, carts, orders, subscriptions, servers, trials }) => {
             const cart = carts.find(c => c.id === user.id);
             // Skip lines whose product an admin deleted: the cart page doesn't
             // show them, so the customer couldn't remove them.
@@ -184,27 +207,36 @@ const Cart = (() => {
             for (const [id, qty] of Object.entries(totals)) {
                 const p = products.find(x => x.id === id);
                 if (!p) throw new Error("A product in your cart no longer exists. Remove it and try again.");
-                if (p.stock < qty) throw new Error(`Only ${p.stock} ${p.name} left in stock. Lower the quantity and try again.`);
+                if (p.category !== "vms" && p.stock < qty) throw new Error(`Only ${p.stock} ${p.name} left in stock. Lower the quantity and try again.`);
             }
             for (const [id, qty] of Object.entries(totals)) {
                 const p = products.find(x => x.id === id);
-                p.stock -= qty;
+                if (p.category !== "vms") p.stock -= qty;
                 p.sold += qty;
             }
 
+            const hosts = DB.infrastructureState({ servers, subscriptions, trials });
             const lines = items.map(i => {
                 const p = products.find(x => x.id === i.productId);
-                return { productId: p.id, name: p.name, price: p.price, unit: p.unit, qty: i.qty, options: i.options };
+                const options = normalizeOptions(p, i.options);
+                return { productId: p.id, name: p.name, price: p.price, unit: p.unit, qty: i.qty, options,
+                         months: duration(i.months ?? 1), monthlyCost: p.monthlyCost ?? null,
+                         ...(p.category === "vms" ? { allocations: DB.allocate(hosts, p, options["Data center"], i.qty) } : {}) };
             });
             const newOrder = {
                 id: "o-" + Date.now().toString(36).toUpperCase(),
                 userId: user.id,
                 date: new Date().toISOString(),
                 items: lines,
-                total: lines.reduce((s, l) => s + l.price * l.qty, 0),
+                total: DB.money(lines.reduce((s, l) => s + l.price * l.qty * l.months, 0)),
                 cardLast4: last4,          // never store the full card number
             };
             orders.push(newOrder);
+            lines.forEach(l => subscriptions.push({
+                ...l, id: DB.newId("sub"), userId: user.id, orderId: newOrder.id,
+                startsAt: newOrder.date, endsAt: DB.subscriptionEnd(newOrder.date, l.months),
+                status: "active", paid: DB.money(l.price * l.qty * l.months), refund: 0,
+            }));
             cart.items = [];               // paying empties the cart
             return newOrder;
         });
@@ -215,6 +247,30 @@ const Cart = (() => {
 
     async function ordersFor(userId) {
         return (await DB.list("orders")).filter(o => o.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    /* ---------- Subscriptions ---------- */
+    async function subscriptionsFor() {
+        const user = await Auth.currentUser();
+        if (user?.role !== "customer") throw new Error("Sign in as a customer.");
+        return (await DB.list("subscriptions")).filter(s => s.userId === user.id).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+    }
+
+    // Cancellation ends the whole line and refunds the unused prepaid time.
+    async function cancelSubscription(id) {
+        const user = await Auth.currentUser();
+        if (user?.role !== "customer") throw new Error("Sign in as a customer.");
+        return DB.transaction(({ subscriptions, products }) => {
+            const s = subscriptions.find(x => x.id === id && x.userId === user.id);
+            if (!s || s.status !== "active") throw new Error("That subscription is not active or does not belong to you.");
+            const now = Date.now();
+            const remaining = Math.max(0, Math.min(1, (Date.parse(s.endsAt) - now) / (Date.parse(s.endsAt) - Date.parse(s.startsAt))));
+            s.status = "cancelled";
+            s.cancelledAt = new Date(now).toISOString();
+            s.refund = DB.money(s.paid * remaining);
+            DB.releaseSubscription(s, products);
+            return s;
+        });
     }
 
     /* ---------- Header badge ---------- */
@@ -230,6 +286,6 @@ const Cart = (() => {
 
     // Public versions go through the queue; setQty uses the plain remove()
     // inside, so it never waits on itself.
-    return { get, add: serial(add), setQty: serial(setQty), remove: serial(remove), clear: serial(clear),
-             mergeGuestInto: serial(mergeGuestInto), checkout: serial(checkout), ordersFor, renderBadge };
+    return { get, add: serial(add), setQty: serial(setQty), setDuration: serial(setDuration), remove: serial(remove), clear: serial(clear),
+             mergeGuestInto: serial(mergeGuestInto), checkout: serial(checkout), ordersFor, subscriptionsFor, cancelSubscription: serial(cancelSubscription), renderBadge };
 })();

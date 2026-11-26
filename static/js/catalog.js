@@ -23,8 +23,16 @@
     const searchBox = document.getElementById("q");
     if (searchBox && query) searchBox.value = query;
 
+    let renderVersion = 0;
     async function render() {
-        const products = await DB.list("products");
+        const version = ++renderVersion;
+        document.querySelectorAll("[data-add]").forEach(button => { button.disabled = true; });
+        const options = chosenOptions();
+        const [allProducts, { lines }] = await Promise.all([DB.list("products"), Cart.get()]);
+        const products = await Promise.all(allProducts.map(async p => ({
+            ...p, stock: await DB.capacityFor(p.id, options, lines),
+        })));
+        if (version !== renderVersion) return;
         const sort = UI.sorters[sortSelect?.value] || UI.sorters.popular;
 
         // Search results (home page): matches on name or description.
@@ -73,23 +81,28 @@
     // keeps working after the cards are re-drawn.
     document.addEventListener("click", async (event) => {
         const button = event.target.closest("[data-add]");
-        if (!button) return;
+        if (!button || button.disabled) return;
         const card = button.closest(".product");
         const qtyInput = card.querySelector(".qty-input");
         button.disabled = true;
         try {
             const { added, capped, product } = await Cart.add(button.dataset.add, qtyInput?.value || 1, chosenOptions());
             UI.toast(capped
-                ? `Added ${added} × ${product.name}. That's all we have in stock.`
+                ? (product.category === "vms" ? `Added ${added} × ${product.name}. That's all the capacity available for this cart.` : `Added ${added} × ${product.name}. That's all we have in stock.`)
                 : `Added ${added} × ${product.name} to your cart.`);
             if (qtyInput) qtyInput.value = 1;
         } catch (err) {
             UI.toast(err.message, "error");
-        } finally {
-            button.disabled = false;
+            await render();
         }
     });
 
     sortSelect?.addEventListener("change", render);
+    document.querySelector('[data-option="Data center"]')?.addEventListener("change", render);
+    document.addEventListener("cart:change", render);
+    window.addEventListener("storage", event => {
+        if (event.key === null || ["cc_products", "cc_servers", "cc_subscriptions", "cc_trials", "cc_carts"].includes(event.key)) render();
+    });
+    window.addEventListener("pageshow", event => { if (event.persisted) render(); });
     await render();
 })();

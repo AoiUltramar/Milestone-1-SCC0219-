@@ -18,7 +18,7 @@ test.describe("T1 Catalog", () => {
         await page.goto("vms.html");
         await expect(page.locator("#plan-count")).toHaveText("4 plans");
         const gpu = productCard(page, "GPU VM");
-        await expect(gpu.getByText("Sold out").first()).toBeVisible();
+        await expect(gpu.getByText("No capacity").first()).toBeVisible();
         await expect(gpu.getByRole("button", { name: /Add GPU VM/ })).toBeDisabled();
         await expect(productCard(page, "Standard VM").locator("dt", { hasText: "Memory" })).toBeVisible();
     });
@@ -164,12 +164,12 @@ test.describe("T4 Cart", () => {
 
     test("can't add more than the stock", async ({ page }) => {
         await page.goto("vms.html");
-        const card = productCard(page, "Performance VM");     // 15 in stock
+        const card = productCard(page, "Performance VM");
         await card.getByLabel(/Quantity/).fill("20");
         await card.getByRole("button", { name: /Add Performance VM/ }).click();
-        await expect(page.locator(".toast").last()).toHaveText(/Added 15 .*all we have/);
-        await card.getByRole("button", { name: /Add Performance VM/ }).click();
-        await expect(page.locator(".toast.error")).toHaveText(/already have all 15/);
+        await expect(page.locator(".toast").last()).toHaveText(/Added 4 .*capacity available/);
+        await expect(card.getByRole("button", { name: /Add Performance VM/ })).toBeDisabled();
+        await expect(card.getByLabel(/Quantity/)).toBeDisabled();
     });
 
     test("VM options are kept with the cart line", async ({ page }) => {
@@ -234,7 +234,7 @@ test.describe("T5 Checkout", () => {
         await expect(page.locator(".cart-count")).toBeHidden();
 
         const product = await page.evaluate(() => DB.get("products", "standard-vm"));
-        expect(product.stock).toBe(40);      // was 42
+        expect(product.stock).toBe(46);
         expect(product.sold).toBe(514);      // was 512
 
         await page.goto("account.html");
@@ -272,9 +272,8 @@ test.describe("T6 Admin: products", () => {
         await page.getByRole("button", { name: "New product" }).click();
         await page.getByLabel("Name", { exact: true }).fill("Micro VM");
         await page.getByLabel("Price (R$)").fill("9.90");
-        await page.getByLabel("Quantity in stock").fill("5");
         await page.getByLabel("Description").fill("The smallest server we sell.");
-        await page.getByLabel("Specs").fill("CPU: 1 shared vCPU\nMemory: 512 MB RAM");
+        await page.getByLabel("Specs").fill("CPU: 1 shared vCPU\nMemory: 512 MB RAM\nStorage: 25 GB SSD");
         await page.getByRole("button", { name: "Save product" }).click();
         await expect(page.locator("#product-rows")).toContainText("Micro VM");
 
@@ -291,9 +290,9 @@ test.describe("T6 Admin: products", () => {
         await expect(page.locator('tr[data-id="micro-vm"]')).toContainText("R$ 12,00");
 
         // Stock to zero from the table -> sold out in the store
-        await page.getByLabel("Stock of Micro VM").fill("0");
-        await page.getByLabel("Stock of Micro VM").press("Enter");
-        await expect(page.locator(".toast").last()).toContainText("stock set to 0");
+        await page.getByRole("button", { name: "Edit Micro VM" }).click();
+        await page.getByLabel("Specs").fill("CPU: 64 vCPU\nMemory: 512 MB RAM\nStorage: 25 GB SSD");
+        await page.getByRole("button", { name: "Save product" }).click();
         await page.goto("vms.html");
         await expect(productCard(page, "Micro VM").getByRole("button", { name: /Add/ })).toBeDisabled();
 
@@ -309,6 +308,7 @@ test.describe("T6 Admin: products", () => {
         await page.getByRole("button", { name: "New product" }).click();
         await page.getByLabel("Name", { exact: true }).fill("Broken");
         await page.getByLabel("Price (R$)").fill("5");
+        await page.locator("#f-category").selectOption("vpn");
         await page.getByLabel("Quantity in stock").fill("-3");
         await page.getByLabel("Description").fill("x");
         await page.getByRole("button", { name: "Save product" }).click();
@@ -390,7 +390,7 @@ test.describe("T8 Free trial (our feature)", () => {
         await expect(page.locator("#trial-box")).toContainText("eva-lab");
         await expect(page.locator("#trial-box")).toContainText("14 days left");
         const vm = await page.evaluate(() => DB.get("products", "standard-vm"));
-        expect(vm.stock).toBe(41);          // the trial VM uses one unit of stock (was 42)
+        expect(vm.stock).toBe(47);
 
         await page.goto("trial.html");
         await expect(page.locator("#trial-status")).toContainText("already used your free trial");
@@ -423,7 +423,7 @@ test.describe("T9 WebMCP tools", () => {
         const found = await page.evaluate(() => window.__tools.search_products.execute({ query: "gpu" }));
         expect(found).toContain("GPU VM");
         const soldOut = await page.evaluate(() => window.__tools.add_to_cart.execute({ productId: "gpu-vm" }));
-        expect(soldOut).toContain("sold out");
+        expect(soldOut).toContain("no remaining capacity");
         const added = await page.evaluate(() =>
             window.__tools.add_to_cart.execute({ productId: "nano-vm", quantity: 2, dataCenter: "São Paulo" }));
         expect(added).toBe("Added 2 × Nano VM.");
@@ -435,7 +435,7 @@ test.describe("T9 WebMCP tools", () => {
         await page.waitForFunction(() => window.__tools.view_cart);
         expect(await page.evaluate(() => "set_stock" in window.__tools)).toBe(true);
         const result = await page.evaluate(() => window.__tools.set_stock.execute({ productId: "gpu-vm", stock: 3 }));
-        expect(result).toBe("GPU VM now has 3 in stock.");
+        expect(result).toMatch(/VM capacity is derived/);
     });
 });
 
@@ -500,10 +500,11 @@ test.describe("T10 Regressions (bugs found in code review)", () => {
 
     test("deleting a customer returns their trial VM to stock", async ({ page }) => {
         const user = await registerCustomer(page);
-        await page.evaluate(() => DB.transaction(({ products, trials }) => {
+        await page.evaluate(() => DB.transaction(({ products, trials, servers, subscriptions }) => {
             const me = JSON.parse(localStorage.getItem("cc_session"));
-            products.find(p => p.id === "standard-vm").stock -= 1;
-            trials.push({ id: "t1", userId: me, productId: "standard-vm", endsAt: new Date(Date.now() + 864e5).toISOString() });
+            const plan = products.find(p => p.id === "standard-vm");
+            const allocations = DB.allocate(DB.infrastructureState({ servers, subscriptions, trials }), plan, "São Paulo", 1);
+            trials.push({ id: "t1", userId: me, productId: "standard-vm", allocations, endsAt: new Date(Date.now() + 864e5).toISOString() });
         }));
         await signOut(page);
         await signInAsAdmin(page);
@@ -511,19 +512,20 @@ test.describe("T10 Regressions (bugs found in code review)", () => {
         await page.evaluate(id => Auth.deleteUser(id), id);
         const [stock, trials] = await page.evaluate(async () =>
             [(await DB.get("products", "standard-vm")).stock, (await DB.list("trials")).length]);
-        expect(stock).toBe(42);
+        expect(stock).toBe(48);
         expect(trials).toBe(0);
     });
 
     test("an ended trial gives its VM back to stock", async ({ page }) => {
         await page.goto("index.html");
-        await page.evaluate(() => DB.transaction(({ products, trials }) => {
-            products.find(p => p.id === "standard-vm").stock -= 1;
-            trials.push({ id: "t1", userId: "x", productId: "standard-vm", endsAt: new Date(Date.now() - 1000).toISOString() });
+        await page.evaluate(() => DB.transaction(({ products, trials, servers, subscriptions }) => {
+            const plan = products.find(p => p.id === "standard-vm");
+            const allocations = DB.allocate(DB.infrastructureState({ servers, subscriptions, trials }), plan, "São Paulo", 1);
+            trials.push({ id: "t1", userId: "x", productId: "standard-vm", allocations, endsAt: new Date(Date.now() - 1000).toISOString() });
         }));
         await page.reload();
-        expect((await page.evaluate(() => DB.get("products", "standard-vm"))).stock).toBe(42);
+        expect((await page.evaluate(() => DB.get("products", "standard-vm"))).stock).toBe(48);
         await page.reload();     // released only once
-        expect((await page.evaluate(() => DB.get("products", "standard-vm"))).stock).toBe(42);
+        expect((await page.evaluate(() => DB.get("products", "standard-vm"))).stock).toBe(48);
     });
 });

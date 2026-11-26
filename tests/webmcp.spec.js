@@ -146,15 +146,15 @@ test.describe("W2 search_products and get_product", () => {
 
     test("get_product returns details, or says the id doesn't exist", async ({ page }) => {
         const p = JSON.parse(await text(page, "get_product", { productId: "standard-vm" }));
-        expect(p).toMatchObject({ id: "standard-vm", inStock: 42, freeTrial: true, specs: { CPU: "2 vCPU" } });
+        expect(p).toMatchObject({ id: "standard-vm", inStock: 48, freeTrial: true, specs: { CPU: "2 vCPU" } });
         expect(await text(page, "get_product", { productId: "nope" })).toBe('There is no product with id "nope".');
         expect(await text(page, "get_product", {})).toMatch(/^Invalid input: "productId" is required/);
     });
 
     test("results reflect stock changes made by an admin", async ({ page }) => {
-        await page.evaluate(() => DB.update("products", "gpu-vm", { stock: 2 }));
-        const gpu = JSON.parse(await text(page, "get_product", { productId: "gpu-vm" }));
-        expect(gpu.inStock).toBe(2);
+        await page.evaluate(() => DB.update("products", "dedicated-ip", { stock: 2 }));
+        const ip = JSON.parse(await text(page, "get_product", { productId: "dedicated-ip" }));
+        expect(ip.inStock).toBe(2);
     });
 });
 
@@ -178,7 +178,7 @@ test.describe("W3 add_to_cart", () => {
             .toBe("Added 3 × Dedicated IP. Only 3 could be added because of stock.");
         expect(await text(page, "add_to_cart", { productId: "dedicated-ip" }))
             .toMatch(/^Could not add it: You already have all 3/);
-        expect(await text(page, "add_to_cart", { productId: "gpu-vm" })).toBe("Could not add it: GPU VM is sold out.");
+        expect(await text(page, "add_to_cart", { productId: "gpu-vm" })).toBe("Could not add it: GPU VM has no remaining capacity in São Paulo for this cart.");
     });
 
     test("bad input is refused before touching the cart", async ({ page }) => {
@@ -321,7 +321,7 @@ test.describe("W5 go_to_checkout", () => {
         await ready(page);
         await text(page, "add_to_cart", { productId: "nano-vm" });
         const out = await call(page, "go_to_checkout");
-        if (out.result) expect(out.result).toMatch(/Opening the payment page: 1 item, R\$ 19,90 per month\. The user will enter the card and confirm\./);
+        if (out.result) expect(out.result).toMatch(/Opening the payment page: 1 item, R\$ 19,90 prepaid\. The user will enter the card and confirm\./);
         await expect(page).toHaveURL(/cart\.html#payment$/);
         await expect(page.locator("#pay-form")).toBeVisible();
         await expect(page.locator("#order-done")).toBeHidden();      // nothing was paid
@@ -353,9 +353,9 @@ test.describe("W6 set_stock (admins)", () => {
     });
 
     test("changes stock and the admin table shows it", async ({ page }) => {
-        expect(await text(page, "set_stock", { productId: "gpu-vm", stock: 3 })).toBe("GPU VM now has 3 in stock.");
+        expect(await text(page, "set_stock", { productId: "dedicated-ip", stock: 3 })).toBe("Dedicated IP now has 3 in stock.");
         await page.reload();
-        await expect(page.locator("#stock-gpu-vm")).toHaveValue("3");
+        await expect(page.locator("#stock-dedicated-ip")).toHaveValue("3");
     });
 
     test("bad input is refused and nothing changes", async ({ page }) => {
