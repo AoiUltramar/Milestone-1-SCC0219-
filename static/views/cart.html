@@ -1,0 +1,95 @@
+    <div class="wrap">
+        <div class="page-head">
+            <h1>Your cart</h1>
+            <p>Choose a prepaid term of 1, 3 or 12 months for each plan. Cancel anytime for a proportional refund of unused time.</p>
+        </div>
+
+        <!-- Shown after a successful payment -->
+        <section class="panel tinted order-done" id="order-done" aria-labelledby="done-title" tabindex="-1" hidden>
+            <p class="eyebrow">Order placed</p>
+            <h2 id="done-title">Thanks! Your services are being set up.</h2>
+            <p id="done-summary"></p>
+            <div class="actions">
+                <a class="btn" href="/account">See my orders and subscriptions</a>
+                <a class="btn secondary" href="/">Keep shopping</a>
+            </div>
+        </section>
+
+        <div class="split" id="cart-area">
+            <section class="panel" aria-labelledby="cart-title">
+                <h2 id="cart-title" tabindex="-1">Current order</h2>
+
+                <div class="notice" id="cart-empty" hidden>
+                    Your cart is empty. <a href="/vms">Browse virtual machines</a> or <a href="/vpn">VPN plans</a>.
+                </div>
+
+                <div id="cart-filled">
+                    <div class="table-scroll">
+                        <table>
+                            <caption class="visually-hidden">Plans currently in the cart</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Plan</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col" class="num">Price</th>
+                                    <th scope="col" class="num">Total</th>
+                                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cart-lines"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="totals">
+                        <div><span id="cart-count-text">0 items</span><span id="cart-subtotal">R$ 0,00</span></div>
+                        <div class="grand"><span>Total due today</span><span id="cart-total">R$ 0,00</span></div>
+                    </div>
+
+                    <div class="actions">
+                        <a class="btn secondary" href="/">Continue shopping</a>
+                        <button class="btn secondary" type="button" id="empty-cart">Empty cart</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Card fields: any number is accepted (assignment rule); only the last 4 digits are saved. -->
+            <section class="panel tinted" aria-labelledby="payment-title" id="payment">
+                <h2 id="payment-title">Payment</h2>
+                <div class="notice" id="pay-signin" hidden>
+                    <a href="/login?next=/cart">Sign in or create an account</a> to pay. Your cart will be kept.
+                </div>
+                <div class="notice warn" id="pay-admin" hidden>
+                    You're signed in as an administrator. Sign in with a customer account to place orders.
+                </div>
+                <form id="pay-form" novalidate>
+                    <div class="field">
+                        <label for="card-name">Name on card</label>
+                        <input id="card-name" name="name" type="text" autocomplete="cc-name" placeholder="e.g. PEDRO H HOLANDA" required>
+                    </div>
+                    <div class="field">
+                        <label for="card-number">Credit card number</label>
+                        <input id="card-number" name="number" type="text" inputmode="numeric" autocomplete="cc-number"
+                               placeholder="0000 0000 0000 0000" maxlength="23" required>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="card-expiration">Expiration</label>
+                            <input id="card-expiration" name="expiry" type="text" inputmode="numeric" autocomplete="cc-exp"
+                                   placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="field">
+                            <label for="card-cvv">CVV</label>
+                            <input id="card-cvv" name="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" required>
+                        </div>
+                    </div>
+                    <div class="notice" style="margin: .25rem 0 1.25rem;">
+                        <strong>Due today: <span id="due-today">R$ 0,00</span></strong><br>
+                        <span class="hint">Prepaid service. No automatic renewal; cancellation and refunds are simulated.</span>
+                    </div>
+                    <div class="notice warn" id="pay-error" role="alert" tabindex="-1" hidden></div>
+                    <button class="btn" type="submit" id="pay-button">Pay and activate</button>
+                </form>
+            </section>
+        </div>
+    </div>
+

@@ -1,0 +1,41 @@
+    <div class="wrap">
+        <div class="page-head">
+            <p class="eyebrow">Category</p>
+            <h1>VPN</h1>
+            <p class="lead">A private connection for your phone, laptop and TV. We don't keep activity logs, and you can cancel at any time.</p>
+        </div>
+
+        <section class="panel tinted category-config" aria-labelledby="config-title">
+            <h2 id="config-title">Applies to every VPN plan you add</h2>
+            <div class="field-row">
+                <div class="field">
+                    <label for="exit">Default exit country</label>
+                    <select id="exit" data-option="Exit country">
+                            <option>Brazil</option>
+                            <option>United States</option>
+                            <option>Portugal</option>
+                            <option>Germany</option>
+                            <option>Japan</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-head">
+            <h2 id="plan-count" data-noun="plans">Loading…</h2>
+            <div>
+                <label class="visually-hidden" for="sort">Sort by</label>
+                <select id="sort">
+                    <option value="popular">Most popular</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="name">Name: A to Z</option>
+                </select>
+            </div>
+        </div>
+
+        <ul class="shelf-grid" data-shelf="vpn" aria-busy="true" aria-labelledby="plan-count"></ul>
+
+        <p style="margin-top: 2rem;"><a href="/">← Back to all plans</a></p>
+    </div>
+

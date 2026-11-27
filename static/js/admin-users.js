@@ -1,8 +1,8 @@
 /* ==========================================================================
-   admin-users.js — admin-users.html: manage customers and administrators
+   admin-users.js — the users screen (/admin/users): manage customers and administrators
    ========================================================================== */
 
-(async () => {
+Views.adminUsers = async ({ signal }) => {
     const admin = await Auth.requireRole("admin");
     if (!admin) return;
 
@@ -82,7 +82,7 @@
         if (button.dataset.action === "edit") return openForm(user);
         if (!confirm(`Delete ${user.name}'s account? Their cart and free trial are removed too.`)) return;
         try {
-            await Auth.deleteUser(id);     // also removes their cart and trial
+            await Auth.deleteUser(id);     // the server also removes their cart and trial
             UI.toast(`${user.name} deleted.`);
             await render();
         } catch (err) {
@@ -136,4 +136,4 @@
     $("new-user").addEventListener("click", () => openForm());
     $("user-filter").addEventListener("input", render);
     await render();
-})();
+};

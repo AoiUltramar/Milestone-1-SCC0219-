@@ -1,12 +1,85 @@
 <!DOCTYPE html>
-<!-- Entry point: serving this folder and opening "/" lands on the store. -->
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta http-equiv="refresh" content="0; url=html/index.html">
-        <title>Cache & Carry</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Cache &amp; Carry · Cloud servers &amp; VPN</title>
+        <link rel="icon" href="/static/logo.png">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/static/style.css">
+
+        <!-- Single-page application: this file is the only page. The router (router.js)
+             swaps the content of <main id="app"> as the address changes. Order matters:
+             shared constants, then data access (db, auth, cart), helpers, the router,
+             one script per screen, WebMCP and finally the start-up code. -->
+        <script src="/shared/config.js" defer></script>
+        <script src="/static/js/db.js" defer></script>
+        <script src="/static/js/router.js" defer></script>
+        <script src="/static/js/auth.js" defer></script>
+        <script src="/static/js/cart.js" defer></script>
+        <script src="/static/js/ui.js" defer></script>
+        <script src="/static/js/catalog.js" defer></script>
+        <script src="/static/js/cart-page.js" defer></script>
+        <script src="/static/js/login.js" defer></script>
+        <script src="/static/js/account.js" defer></script>
+        <script src="/static/js/trial.js" defer></script>
+        <script src="/static/js/admin-products.js" defer></script>
+        <script src="/static/js/admin-users.js" defer></script>
+        <script src="/static/js/admin-dashboard.js" defer></script>
+        <script src="/static/js/webmcp.js" defer></script>
+        <script src="/static/js/app.js" defer></script>
     </head>
+
     <body>
-        <p><a href="html/index.html">Open the Cache &amp; Carry store</a></p>
+        <a class="skip-link" href="#app">Skip to content</a>
+
+        <header class="site-header">
+            <div class="wrap">
+                <a class="logo" href="/">
+                    <span class="logo-mark"><img src="/static/logo.png" alt="" width="36" height="36"></span>
+                    <span>Cache &amp; Carry<small>Cloud servers &amp; VPN</small></span>
+                </a>
+                <form class="search" role="search" action="/" id="search-form">
+                    <label for="q" class="visually-hidden">Search plans</label>
+                    <input id="q" name="q" type="search" placeholder="Search VMs, VPN plans, add-ons…">
+                    <button class="btn" type="submit">Search</button>
+                </form>
+                <nav class="header-actions" aria-label="Account">
+                    <a href="/login" data-auth="sign-in">Sign in</a>
+                    <a href="/about">About us</a>
+                    <a href="/cart">Cart<span class="cart-count" aria-label="0 items" hidden>0</span></a>
+                </nav>
+            </div>
+        </header>
+
+        <nav class="aisles" aria-label="Categories">
+            <ul>
+                <li><a href="/">All</a></li>
+                <li><a href="/vms">Virtual machines</a></li>
+                <li><a href="/vpn">VPN</a></li>
+                <li><a href="/addons">Add-ons</a></li>
+                <li class="aisle-trial"><a href="/trial">Free VM trial</a></li>
+            </ul>
+        </nav>
+
+        <!-- The current screen is drawn here. -->
+        <main id="app" tabindex="-1">
+            <noscript><div class="wrap"><p class="notice warn">Cache &amp; Carry needs JavaScript to run.</p></div></noscript>
+        </main>
+
+        <footer class="site-footer">
+            <div class="wrap">
+                <span>Cache &amp; Carry</span>
+                <nav aria-label="Footer">
+                    <a href="/">Home</a>
+                    <a href="/trial">Free trial</a>
+                    <a href="/about">About us</a>
+                    <a href="/login">Log in</a>
+                    <a href="/cart">Cart</a>
+                </nav>
+            </div>
+        </footer>
     </body>
 </html>

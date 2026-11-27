@@ -1,8 +1,8 @@
 /* ==========================================================================
-   account.js — account.html: profile, trial and order history (customers)
+   account.js — the account screen (/account): profile, trial, subscriptions and orders (customers)
    ========================================================================== */
 
-(async () => {
+Views.account = async ({ signal }) => {
     const $ = id => document.getElementById(id);
     const form = $("profile-form");
     const errorBox = $("profile-error");
@@ -33,8 +33,9 @@
                 address: { street: data.street, city: data.city, cep: data.cep },
             };
             if (data.password) {
-                if (!await Auth.checkPassword(user.id, data.current)) throw new Error("Your current password is incorrect.");
+                // The server checks the current password before accepting the new one.
                 changes.password = data.password;
+                changes.currentPassword = data.current;
             }
             const saved = await Auth.updateUser(user.id, changes);
             fill(saved);
@@ -46,7 +47,7 @@
     });
 
     /* ---------- Trial ---------- */
-    const trial = (await DB.list("trials")).find(t => t.userId === user.id);
+    const trial = (await DB.list("trials")).find(t => t.userId === user.id);   // the server returns only this customer's trial
     const box = $("trial-box");
     if (trial) {
         const left = Math.ceil((new Date(trial.endsAt) - new Date()) / 86400000);
@@ -55,14 +56,39 @@
                 <strong>${UI.esc(trial.hostname)}</strong> · Standard VM · ${UI.esc(trial.os)} · ${UI.esc(trial.region)}<br>
                 ${left > 0 ? `${left} day${left > 1 ? "s" : ""} left (ends ${UI.formatDate(trial.endsAt)}).`
                            : `Ended on ${UI.formatDate(trial.endsAt)}.`}
-                <a href="vms.html#standard-vm">Upgrade to a Standard VM</a>
+                <a href="/vms#standard-vm">Upgrade to a Standard VM</a>
             </div>`;
     } else {
-        box.innerHTML = `<p>You haven't used your free trial yet. <a href="trial.html">Start a 14-day Standard VM trial</a>.</p>`;
+        box.innerHTML = `<p>You haven't used your free trial yet. <a href="/trial">Start a 14-day Standard VM trial</a>.</p>`;
     }
 
+    /* ---------- Subscriptions ---------- */
+    const subscriptionsBox = $("subscriptions-box");
+    async function renderSubscriptions() {
+        const subscriptions = await Cart.subscriptionsFor();
+        subscriptionsBox.innerHTML = subscriptions.map(s => `
+            <div class="notice subscription-item">
+                <strong>${s.qty} × ${UI.esc(s.name)}</strong> · ${s.status === "active" ? "Active" : s.status === "cancelled" ? "Cancelled" : "Expired"}<br>
+                <span class="hint">${Object.entries(s.options || {}).map(([k, v]) => `${UI.esc(k)}: ${UI.esc(v)}`).join(" · ")}</span><br>
+                ${s.months} month${s.months === 1 ? "" : "s"} · ${UI.formatDate(s.startsAt)} – ${UI.formatDate(s.endsAt)}<br>
+                Paid: ${DB.formatPrice(s.paid)}${s.status === "cancelled" ? ` · Refunded: ${DB.formatPrice(s.refund)}<br>Cancelled on ${UI.formatDate(s.cancelledAt)}` : ""}
+                ${s.status === "active" ? `<div class="actions"><button class="btn small secondary" type="button" data-cancel-sub="${UI.esc(s.id)}">Cancel subscription</button></div>` : ""}
+            </div>`).join("") || `<p>No subscriptions yet. <a href="/">See plans</a>.</p>`;
+    }
+    subscriptionsBox.addEventListener("click", async e => {
+        const button = e.target.closest("[data-cancel-sub]");
+        if (!button || !confirm("Cancel all units in this subscription now? Service stops immediately and unused time is refunded (simulated).")) return;
+        button.disabled = true;
+        try {
+            const s = await Cart.cancelSubscription(button.dataset.cancelSub);
+            UI.toast(`Subscription cancelled. Refund: ${DB.formatPrice(s.refund)}.`);
+        } catch (err) { UI.toast(err.message, "error"); }
+        await renderSubscriptions();
+    });
+    await renderSubscriptions();
+
     /* ---------- Orders ---------- */
-    const orders = await Cart.ordersFor(user.id);
+    const orders = await Cart.ordersFor();
     $("orders-empty").hidden = orders.length > 0;
     $("orders-table").hidden = orders.length === 0;
     $("orders-body").innerHTML = orders.map(o => `
@@ -73,4 +99,4 @@
             <td class="num">${DB.formatPrice(o.total)}</td>
             <td>•••• ${UI.esc(o.cardLast4)}</td>
         </tr>`).join("");
-})();
+};

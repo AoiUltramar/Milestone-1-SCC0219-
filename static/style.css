@@ -710,3 +710,22 @@ details summary { cursor: pointer; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) {
     * { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* ---------- Subscriptions and dashboard ---------- */
+.line-term { display: block; min-width: 7rem; margin-top: .25rem; }
+.subscription-item + .subscription-item { margin-top: .75rem; }
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.dashboard-metric {
+    padding: 1rem;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+.dashboard-metric strong { font-size: 1.55rem; overflow-wrap: anywhere; }
+
+.dashboard-metric progress { display: block; width: 100%; margin-top: .5rem; }

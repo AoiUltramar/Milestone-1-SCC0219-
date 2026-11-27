@@ -1,0 +1,70 @@
+    <div class="wrap">
+        <div class="page-head">
+            <p class="eyebrow">Free for 14 days</p>
+            <h1>Try a Standard VM, free</h1>
+            <p class="lead">Pick an operating system and a data center and we'll have your server running in about a minute. No credit card needed, one trial per account.</p>
+        </div>
+
+        <div class="split">
+            <section class="panel" aria-labelledby="setup-title" style="padding-top: 0;">
+                <h2 id="setup-title">Set up your trial VM</h2>
+                <form id="trial-form" novalidate>
+                    <fieldset class="option-grid field">
+                        <legend>Operating system</legend>
+                        <label class="option"><input type="radio" name="os" value="Ubuntu 24.04 LTS" checked><span><strong>Ubuntu 24.04 LTS</strong>Most popular</span></label>
+                        <label class="option"><input type="radio" name="os" value="Debian 12"><span><strong>Debian 12</strong>Lean and stable</span></label>
+                        <label class="option"><input type="radio" name="os" value="Fedora 40"><span><strong>Fedora 40</strong>Latest packages</span></label>
+                        <label class="option"><input type="radio" name="os" value="Rocky Linux 9"><span><strong>Rocky Linux 9</strong>Enterprise-style</span></label>
+                    </fieldset>
+
+                    <fieldset class="option-grid field">
+                        <legend>Data center</legend>
+                        <label class="option"><input type="radio" name="region" value="São Paulo" checked><span><strong>São Paulo</strong>Lowest latency for most of Brazil</span></label>
+                        <label class="option"><input type="radio" name="region" value="Rio de Janeiro"><span><strong>Rio de Janeiro</strong>Southeast backup site</span></label>
+                        <label class="option"><input type="radio" name="region" value="Fortaleza"><span><strong>Fortaleza</strong>Closest to the Northeast</span></label>
+                    </fieldset>
+
+                    <div class="field">
+                        <label for="hostname">Server name</label>
+                        <input id="hostname" name="hostname" type="text" placeholder="e.g. my-first-server" pattern="[a-z0-9-]+" aria-describedby="hostname-hint">
+                        <p class="hint" id="hostname-hint">Lowercase letters, numbers and dashes.</p>
+                    </div>
+
+                    <div class="field">
+                        <label for="ssh">SSH public key <span style="font-weight: 400;">(optional)</span></label>
+                        <textarea id="ssh" name="ssh" placeholder="ssh-ed25519 AAAA… you@laptop" aria-describedby="ssh-hint"></textarea>
+                        <p class="hint" id="ssh-hint">Leave empty and we'll email you a one-time password instead.</p>
+                    </div>
+
+                    <label class="check"><input type="checkbox" name="agree" required> <span>I agree to the fair use policy: no mining, no spam, no attacks on other networks.</span></label>
+
+                    <div class="notice warn" id="trial-error" role="alert" tabindex="-1" hidden></div>
+                    <button class="btn big" type="submit">Start my free trial</button>
+                </form>
+            </section>
+
+            <aside class="panel tinted" aria-labelledby="included-title">
+                <h2 id="included-title">What you get</h2>
+                <ul class="included">
+                    <li><span>CPU</span><strong>2 vCPU</strong></li>
+                    <li><span>Memory</span><strong>4 GB RAM</strong></li>
+                    <li><span>Storage</span><strong>80 GB SSD</strong></li>
+                    <li><span>Transfer</span><strong>100 GB during trial</strong></li>
+                    <li><span>Length</span><strong>14 days</strong></li>
+                    <li><span>Price</span><strong>R$ 0,00</strong></li>
+                </ul>
+                <div class="notice" id="trial-status" style="margin-top: 1.25rem;">Checking your account…</div>
+                <p class="hint" style="margin-top: 1rem;">After 14 days the VM pauses and your files are kept for 7 more days. Upgrade to a Standard VM (R$ 49,90/month) at any point to keep it running.</p>
+            </aside>
+        </div>
+
+        <section aria-labelledby="how-title" style="margin-top: 3rem;">
+            <h2 id="how-title">How the trial works</h2>
+            <ol class="steps">
+                <li><strong>Choose</strong><br>Pick an operating system and a data center.</li>
+                <li><strong>Connect</strong><br>Log in over SSH a minute later.</li>
+                <li><strong>Decide</strong><br>Upgrade before day 14, or let it pause. No charge either way.</li>
+            </ol>
+        </section>
+    </div>
+

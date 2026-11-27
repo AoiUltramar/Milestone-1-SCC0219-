@@ -27,14 +27,17 @@
 
 (async () => {
     const mc = document.modelContext ?? navigator.modelContext;   // older builds used navigator
-    if (!mc?.registerTool) return;
+    if (typeof mc?.registerTool !== "function") {
+        console.info("WebMCP: this browser does not expose registerTool. Use a compatible browser in a secure context.");
+        return;
+    }
 
     const json = value => JSON.stringify(value, null, 2);
     const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
     const summary = p => ({
         id: p.id, name: p.name, category: DB.CATEGORIES[p.category]?.name ?? p.category,
-        price: DB.formatPrice(p.price) + (p.unit || ""), inStock: p.stock, description: p.description,
-        specs: Object.fromEntries(p.specs || []), freeTrial: !!p.trial,
+        price: DB.formatPrice(p.price) + (p.unit || ""), inStock: p.stock, availableCapacity: p.stock, ...(p.capacityByRegion ? { capacityByRegion: p.capacityByRegion } : {}), description: p.description,
+        specs: Object.fromEntries(p.specs || []), freeTrial: !!p.trial, subscriptionMonths: DB.DURATIONS,
         ...(Object.keys(DB.CATEGORIES[p.category]?.options ?? {}).length
             ? { options: DB.CATEGORIES[p.category].options } : {}),
     });
@@ -49,6 +52,9 @@
     // Returns a sentence describing the first problem, or null if the arguments are fine.
     function checkArgs(schema, args) {
         if (args === null || typeof args !== "object" || Array.isArray(args)) return "the arguments must be an object.";
+        for (const name of Object.keys(args)) {
+            if (!Object.hasOwn(schema.properties ?? {}, name)) return `Unknown argument "${name}".`;
+        }
         for (const name of schema.required ?? []) {
             if (args[name] === undefined || args[name] === null) return `"${name}" is required.`;
         }
@@ -67,11 +73,12 @@
         const run = tool.execute;
         return {
             ...tool,
+            inputSchema: { ...tool.inputSchema, additionalProperties: false },
             async execute(args = {}) {
-                const problem = checkArgs(tool.inputSchema, args ?? {});
+                const problem = checkArgs(tool.inputSchema, args);
                 if (problem) return "Invalid input: " + problem;
                 try {
-                    return await run(args ?? {});
+                    return await run(args);
                 } catch (err) {
                     console.error("WebMCP tool", tool.name, err);
                     return "Something went wrong: " + err.message;
@@ -86,7 +93,7 @@
         {
             name: "search_products",
             description: "Search the Cache & Carry catalog of virtual machines, VPN plans and add-ons. " +
-                         "Returns matching products with id, monthly price, stock, specs and purchase options. " +
+                         "Returns matching products with id, monthly price, available capacity, per-region VM capacity, specs and purchase options. " +
                          "Call with no arguments to list everything.",
             inputSchema: {
                 type: "object",
@@ -94,7 +101,7 @@
                     query: { type: "string", description: "Words to look for in the name or description, e.g. 'gpu' or 'family'." },
                     category: { type: "string", enum: Object.keys(DB.CATEGORIES), description: "Limit to one category." },
                     maxPrice: { type: "number", description: "Highest monthly price in reais." },
-                    inStockOnly: { type: "boolean", description: "Leave out sold-out products." },
+                    inStockOnly: { type: "boolean", description: "Leave out products without available capacity." },
                 },
             },
             annotations: { readOnlyHint: true },
@@ -124,8 +131,9 @@
         },
         {
             name: "add_to_cart",
-            description: "Add a product to the shopping cart. The quantity is limited by stock. " +
-                         "Virtual machines take a data center and operating system; VPN plans take an exit country. " +
+            description: "Add a product to the shopping cart. The quantity is limited by available capacity. " +
+                         "Virtual machines share physical server resources in the chosen data center and take an operating system; VPN plans take an exit country. " +
+                         "Choose a prepaid term of 1, 3 or 12 months (default 1). " +
                          "Options left out get the defaults (São Paulo, Ubuntu 24.04 LTS, Brazil); options that " +
                          "don't apply to the product are ignored.",
             inputSchema: {
@@ -133,19 +141,20 @@
                 properties: {
                     productId: { type: "string", description: "Product id, e.g. 'standard-vm'." },
                     quantity: { type: "integer", minimum: 1, default: 1 },
+                    months: { type: "integer", enum: DB.DURATIONS, default: 1, description: "Prepaid subscription duration in months." },
                     dataCenter: { type: "string", enum: OPTIONS["Data center"], description: "Virtual machines only." },
                     operatingSystem: { type: "string", enum: OPTIONS.OS, description: "Virtual machines only." },
                     exitCountry: { type: "string", enum: OPTIONS["Exit country"], description: "VPN plans only." },
                 },
                 required: ["productId"],
             },
-            async execute({ productId, quantity = 1, dataCenter, operatingSystem, exitCountry }) {
+            async execute({ productId, quantity = 1, dataCenter, operatingSystem, exitCountry, months = 1 }) {
                 // Cart.add keeps only the options that belong to the product's category.
                 const options = { "Data center": dataCenter, OS: operatingSystem, "Exit country": exitCountry };
                 try {
-                    const { added, capped, product } = await Cart.add(productId, quantity, options);
+                    const { added, capped, product } = await Cart.add(productId, quantity, options, months);
                     UI.toast(`An assistant added ${added} × ${product.name} to your cart.`);
-                    return `Added ${added} × ${product.name}.` + (capped ? ` Only ${added} could be added because of stock.` : "");
+                    return `Added ${added} × ${product.name}.` + (months !== 1 ? ` Prepaid term: ${months} months.` : "") + (capped ? ` Only ${added} could be added because of ${product.category === "vms" ? "capacity" : "stock"}.` : "");
                 } catch (err) {
                     return "Could not add it: " + err.message;
                 }
@@ -153,24 +162,24 @@
         },
         {
             name: "view_cart",
-            description: "Show what is in the shopping cart, with line keys, quantities, options and the monthly total.",
+            description: "Show what is in the shopping cart, with line keys, quantities, options, subscription terms and the total due today.",
             inputSchema: { type: "object", properties: {} },
             annotations: { readOnlyHint: true },
             async execute() {
-                const { lines, total, count } = await Cart.get();
+                const { lines, total, monthlyTotal, count } = await Cart.get();
                 if (!lines.length) return "The cart is empty.";
                 return json({
                     items: lines.map(l => ({ lineKey: l.key, productId: l.productId, name: l.product.name,
-                                             quantity: l.qty, options: l.options,
-                                             lineTotal: DB.formatPrice(l.product.price * l.qty) })),
-                    itemCount: count, monthlyTotal: DB.formatPrice(total),
+                                             quantity: l.qty, options: l.options, months: l.months ?? 1,
+                                             lineTotal: DB.formatPrice(l.product.price * l.qty * (l.months ?? 1)) })),
+                    itemCount: count, monthlyTotal: DB.formatPrice(monthlyTotal), dueToday: DB.formatPrice(total),
                 });
             },
         },
         {
             name: "update_cart_item",
             description: "Change the quantity of a cart line (use lineKey from view_cart). Quantity 0 removes it. " +
-                         "The quantity is limited by stock.",
+                         "The quantity is limited by available capacity.",
             inputSchema: {
                 type: "object",
                 properties: { lineKey: { type: "string" }, quantity: { type: "integer", minimum: 0 } },
@@ -178,13 +187,15 @@
             },
             async execute({ lineKey, quantity }) {
                 const { lines } = await Cart.get();
-                if (!lines.some(l => l.key === lineKey)) {
+                const line = lines.find(l => l.key === lineKey);
+                if (!line) {
                     return `There is no cart line with key "${lineKey}". Call view_cart to see the current keys.`;
                 }
                 const kept = await Cart.setQty(lineKey, quantity);
                 if (quantity === 0) return "Removed from the cart.";
-                if (kept === 0) return "That product is sold out, so the line was removed.";
-                return `Quantity is now ${kept}.` + (kept < quantity ? ` Only ${kept} are in stock.` : "");
+                const vm = line.product.category === "vms";
+                if (kept === 0) return vm ? "That product has no remaining capacity for this cart, so the line was removed." : "That product is sold out, so the line was removed.";
+                return `Quantity is now ${kept}.` + (kept < quantity ? (vm ? ` Only ${kept} fit within capacity.` : ` Only ${kept} are in stock.`) : "");
             },
         },
         {
@@ -199,8 +210,8 @@
                 if (user?.role === "admin") {
                     return "Administrator accounts can't place orders. The user must sign in with a customer account to pay.";
                 }
-                setTimeout(() => { location.href = "cart.html#payment"; }, 0);
-                const what = `Opening the payment page: ${plural(count, "item")}, ${DB.formatPrice(total)} per month.`;
+                setTimeout(() => Router.go("/cart#payment"), 0);
+                const what = `Opening the payment page: ${plural(count, "item")}, ${DB.formatPrice(total)} prepaid.`;
                 return user
                     ? `${what} The user will enter the card and confirm.`
                     : `${what} The user is not signed in: they must sign in or create an account on that page before paying. The cart is kept.`;
@@ -208,37 +219,64 @@
         },
     ];
 
-    // Admin-only tool, registered only when an administrator is signed in.
-    const user = await Auth.currentUser();
-    if (user?.role === "admin") {
-        tools.push({
-            name: "set_stock",
-            description: "Administrators only: set the quantity in stock for a product.",
-            inputSchema: {
-                type: "object",
-                properties: { productId: { type: "string" }, stock: { type: "integer", minimum: 0 } },
-                required: ["productId", "stock"],
-            },
-            annotations: { consequentialHint: true },
-            async execute({ productId, stock }) {
-                // Checked again on every call: the admin may have signed out in another tab.
-                const current = await Auth.currentUser();
-                if (current?.role !== "admin") return "Only administrators can change stock.";
-                if (!await DB.get("products", productId)) return `There is no product with id "${productId}".`;
-                const p = await DB.update("products", productId, { stock });
-                return `${p.name} now has ${p.stock} in stock.`;
-            },
+    // Admin-only tool: it exists only while an administrator is signed in. In a
+    // single-page app the person can sign in and out without the page reloading,
+    // so the tool is added and removed as that changes.
+    const stockTool = {
+        name: "set_stock",
+        description: "Administrators only: set available capacity for VPN and add-on plans. VM capacity is derived from physical servers on the dashboard.",
+        inputSchema: {
+            type: "object",
+            properties: { productId: { type: "string" }, stock: { type: "integer", minimum: 0 } },
+            required: ["productId", "stock"],
+        },
+        annotations: { consequentialHint: true },
+        async execute({ productId, stock }) {
+            // The server checks the role again; this early answer is for the agent's benefit.
+            const current = await Auth.currentUser({ fresh: true });
+            if (current?.role !== "admin") return "Only administrators can change stock.";
+            const product = await DB.get("products", productId);
+            if (!product) return `There is no product with id "${productId}".`;
+            if (product.category === "vms") return "VM capacity is derived from physical servers. Add a server on the dashboard instead.";
+            const p = await DB.update("products", productId, { stock });
+            return `${p.name} now has ${p.stock} in stock.`;
+        },
+    };
+
+    const registrations = new Map();        // tool name -> what registerTool returned (needed to remove it)
+    async function register(tool) {
+        try {
+            registrations.set(tool.name, await mc.registerTool(safe(tool)));
+            return true;
+        } catch (err) {
+            console.warn("WebMCP: could not register", tool.name, err);
+            return false;
+        }
+    }
+    async function unregister(name) {
+        const handle = registrations.get(name);
+        registrations.delete(name);
+        try {
+            if (typeof handle?.unregister === "function") await handle.unregister();
+            else if (typeof mc.unregisterTool === "function") await mc.unregisterTool(name);
+        } catch (err) {
+            console.warn("WebMCP: could not remove", name, err);
+        }
+    }
+
+    let syncing = Promise.resolve();
+    function syncAdminTool() {
+        syncing = syncing.then(async () => {
+            const admin = (await Auth.currentUser())?.role === "admin";
+            if (admin && !registrations.has(stockTool.name)) await register(stockTool);
+            else if (!admin && registrations.has(stockTool.name)) await unregister(stockTool.name);
         });
+        return syncing;
     }
 
     let registered = 0;
-    for (const tool of tools) {
-        try {
-            await mc.registerTool(safe(tool));
-            registered++;
-        } catch (err) {
-            console.warn("WebMCP: could not register", tool.name, err);
-        }
-    }
-    console.info(`WebMCP: registered ${registered} tools.`);
+    for (const tool of tools) if (await register(tool)) registered++;
+    await syncAdminTool();
+    document.addEventListener("auth:change", syncAdminTool);
+    console.info(`WebMCP: registered ${registered + (registrations.has(stockTool.name) ? 1 : 0)} tools.`);
 })();

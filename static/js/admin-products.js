@@ -1,8 +1,8 @@
 /* ==========================================================================
-   admin-products.js — admin-products.html: product CRUD (admins only)
+   admin-products.js — the products screen (/admin/products): product CRUD (administrators only)
    ========================================================================== */
 
-(async () => {
+Views.adminProducts = async ({ signal }) => {
     const admin = await Auth.requireRole("admin");
     if (!admin) return;
 
@@ -27,8 +27,9 @@
                 <td>${UI.esc(DB.CATEGORIES[p.category]?.name ?? p.category)}</td>
                 <td class="num">${DB.formatPrice(p.price)}<span class="hint">${UI.esc(p.unit)}</span></td>
                 <td class="num">
+                    ${p.category === "vms" ? `<strong>${p.stock}</strong><br><span class="hint">${Object.entries(p.capacityByRegion).map(([region, n]) => `${UI.esc(region)}: ${n}`).join(" · ")}</span>` : `
                     <label class="visually-hidden" for="stock-${UI.esc(p.id)}">Stock of ${UI.esc(p.name)}</label>
-                    <input class="stock-input" id="stock-${UI.esc(p.id)}" type="number" min="0" step="1" value="${p.stock}">
+                    <input class="stock-input" id="stock-${UI.esc(p.id)}" type="number" min="0" step="1" value="${p.stock}">`}
                 </td>
                 <td class="num">${p.sold}</td>
                 <td><div class="row-actions">
@@ -39,7 +40,7 @@
 
         const all = await DB.list("products");
         $("product-summary").textContent =
-            `${all.length} products · ${all.filter(p => p.stock === 0).length} sold out · ${all.reduce((s, p) => s + p.sold, 0)} units sold in total.`;
+            `${all.length} products · ${all.filter(p => p.stock === 0).length} without capacity · ${all.reduce((s, p) => s + p.sold, 0)} units sold in total.`;
     }
 
     /* ---------- Quick stock edit straight in the table ---------- */
@@ -68,8 +69,11 @@
         if (button.dataset.action === "edit") openForm(product);
         if (button.dataset.action === "delete") {
             if (!confirm(`Delete “${product.name}”? This can't be undone.`)) return;
-            await DB.remove("products", id);
-            UI.toast(`${product.name} deleted.`);
+            try {
+                // The server refuses when the product still has active services.
+                await DB.remove("products", id);
+                UI.toast(`${product.name} deleted.`);
+            } catch (err) { UI.toast(err.message, "error"); }
             await render();
         }
     });
@@ -91,17 +95,27 @@
         if (p) {
             f.name.value = p.name; f.id.value = p.id; f.category.value = p.category;
             f.unit.value = p.unit || ""; f.price.value = p.price; f.stock.value = p.stock;
+            f.monthlyCost.value = p.monthlyCost ?? "";
             f.sold.value = p.sold; f.icon.value = p.icon || "";
             f.description.value = p.description || "";
             f.specs.value = (p.specs || []).map(([k, v]) => `${k}: ${v}`).join("\n");
             f.trial.checked = !!p.trial;
         }
+        syncCapacityField();
         showImage(p?.image);
         dialog.showModal();
         f.name.focus();
     }
 
-    // Shrink uploaded photos so localStorage (≈5 MB) doesn't fill up.
+    function syncCapacityField() {
+        const vm = form.elements.category.value === "vms";
+        form.elements.stock.disabled = vm;
+        form.elements.stock.required = !vm;
+        $("f-capacity-hint").hidden = !vm;
+    }
+    form.elements.category.addEventListener("change", syncCapacityField);
+
+    // Shrink uploaded photos (to 400 px) so they stay small in the database and load fast.
     function shrink(file, max = 400) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -136,11 +150,13 @@
         try {
             const name = f.name.value.trim();
             const price = Number(f.price.value);
+            const monthlyCost = f.monthlyCost.value === "" ? null : Number(f.monthlyCost.value);
+            if (monthlyCost !== null && (!Number.isFinite(monthlyCost) || monthlyCost < 0)) throw new Error("Enter a monthly cost of zero or more.");
             const stock = Number(f.stock.value);
             const sold = Number(f.sold.value || 0);
             if (!name) throw new Error("Give the product a name.");
             if (!(price >= 0) || f.price.value === "") throw new Error("Enter a price of zero or more.");
-            if (!Number.isInteger(stock) || stock < 0 || f.stock.value === "") throw new Error("Stock must be a whole number of zero or more.");
+            if (f.category.value !== "vms" && (!Number.isInteger(stock) || stock < 0 || f.stock.value === "")) throw new Error("Stock must be a whole number of zero or more.");
             if (!Number.isInteger(sold) || sold < 0) throw new Error("Quantity sold must be a whole number of zero or more.");
             if (!f.description.value.trim()) throw new Error("Write a short description.");
 
@@ -150,7 +166,7 @@
                 return [line.slice(0, i).trim(), line.slice(i + 1).trim()];
             });
             const data = {
-                name, category: f.category.value, unit: f.unit.value.trim(), price, stock, sold,
+                name, category: f.category.value, unit: f.unit.value.trim(), price, ...(f.category.value !== "vms" ? { stock } : {}), sold, monthlyCost,
                 icon: f.icon.value.trim() || "📦", image: imageData,
                 description: f.description.value.trim(), specs, trial: f.trial.checked,
             };
@@ -167,7 +183,7 @@
             dialog.close();
             await render();
         } catch (err) {
-            UI.showError(errorBox, err.message.includes("quota") ? "The photo is too large to store. Try a smaller image." : err.message);
+            UI.showError(errorBox, err.status === 413 ? "The photo is too large to store. Try a smaller image." : err.message);
         }
     });
 
@@ -176,4 +192,4 @@
     $("product-filter").addEventListener("input", render);
     $("category-filter").addEventListener("change", render);
     await render();
-})();
+};

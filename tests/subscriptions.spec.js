@@ -1,0 +1,44 @@
+const { test, expect } = require("./fixtures");
+const { prepare, registerCustomer, addToCart, signInAsAdmin, signOut } = require("./helpers");
+
+test.beforeEach(async ({ page }) => prepare(page));
+
+test("prepaid terms, account cancellation and dashboard sales", async ({ page }) => {
+    await signInAsAdmin(page);
+    await page.getByRole("button", { name: "Edit Standard VM" }).click();
+    await page.getByLabel("Monthly cost per unit (R$)").fill("20");
+    await page.locator('#product-form button[type="submit"]').click();
+    await expect(page.locator(".toast").last()).toContainText("saved");
+    await signOut(page);
+    const user = await registerCustomer(page);
+    await page.goto("/vms");
+    await addToCart(page, "Standard VM", 2);
+    await page.goto("/cart");
+    await page.getByLabel("Subscription term").selectOption("12");
+    await expect(page.locator("#cart-total")).toHaveText("R$ 1.197,60");
+    await page.getByLabel("Subscription term").selectOption("3");
+    await expect(page.locator("#cart-total")).toHaveText("R$ 299,40");
+    await page.locator("#card-name").fill("Ana Souza");
+    await page.locator("#card-number").fill("1234567890123456");
+    await page.locator("#card-expiration").fill("12/39");
+    await page.locator("#card-cvv").fill("123");
+    await page.getByRole("button", { name: "Pay and activate" }).click();
+    await expect(page.locator("#order-done")).toBeVisible();
+    await page.goto("/account");
+    await expect(page.locator("#subscriptions-box")).toContainText("Active");
+    await signOut(page);
+    await signInAsAdmin(page);
+    await page.getByRole("link", { name: "Dashboard" }).click();
+    await expect(page.locator("#financial-metrics")).toContainText("R$ 179,40");
+    await expect(page.locator("#financial-metrics")).toContainText("R$ 299,40");
+    await signOut(page);
+    await page.goto("/login");
+    await page.getByLabel("Email or username").fill(user.email);
+    await page.locator("#login-pass").fill(user.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator("#subscriptions-box")).toContainText("Active");
+    await page.getByRole("button", { name: "Cancel subscription" }).click();
+    await expect(page.locator("#subscriptions-box")).toContainText("Cancelled");
+    await expect(page.getByRole("button", { name: "Cancel subscription" })).toHaveCount(0);
+    expect(await page.evaluate(async () => (await DB.get("products", "standard-vm")).stock)).toBe(48);
+});

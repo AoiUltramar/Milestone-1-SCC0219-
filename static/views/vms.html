@@ -1,0 +1,48 @@
+    <div class="wrap">
+        <div class="page-head">
+            <p class="eyebrow">Category</p>
+            <h1>Virtual machines</h1>
+            <p class="lead">Linux servers that boot in about a minute, with an SSD, a public IPv4 and IPv6, and monthly prices in reais. Every plan runs in our Brazilian data centers.</p>
+        </div>
+
+        <section class="panel tinted category-config" aria-labelledby="config-title">
+            <h2 id="config-title">Applies to every VM you add</h2>
+            <div class="field-row">
+                <div class="field">
+                    <label for="region">Data center</label>
+                    <select id="region" data-option="Data center">
+                            <option>São Paulo</option>
+                            <option>Rio de Janeiro</option>
+                            <option>Fortaleza</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="os">Operating system</label>
+                    <select id="os" data-option="OS">
+                            <option>Ubuntu 24.04 LTS</option>
+                            <option>Debian 12</option>
+                            <option>Fedora 40</option>
+                            <option>Rocky Linux 9</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-head">
+            <h2 id="plan-count" data-noun="plans">Loading…</h2>
+            <div>
+                <label class="visually-hidden" for="sort">Sort by</label>
+                <select id="sort">
+                    <option value="popular">Most popular</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="name">Name: A to Z</option>
+                </select>
+            </div>
+        </div>
+
+        <ul class="shelf-grid" data-shelf="vms" aria-busy="true" aria-labelledby="plan-count"></ul>
+
+        <p style="margin-top: 2rem;"><a href="/">← Back to all plans</a></p>
+    </div>
+

@@ -1,0 +1,69 @@
+    <div class="wrap">
+        <div class="page-head">
+            <p class="eyebrow">Administration</p>
+            <h1>Dashboard</h1>
+            <p class="lead">Sales, subscription activity and capacity at a glance.</p>
+        </div>
+        <nav class="tabs" aria-label="Admin sections">
+            <a class="btn" href="/admin/dashboard" aria-current="page">Dashboard</a>
+            <a class="btn secondary" href="/admin/products">Products</a>
+            <a class="btn secondary" href="/admin/users">Users</a>
+        </nav>
+        <section class="panel" aria-labelledby="financial-title">
+            <div class="section-head"><h2 id="financial-title">Financial overview</h2><button class="btn small secondary" id="refresh-dashboard" type="button">Refresh</button></div>
+            <p class="hint">All recorded orders, less simulated refunds. Seeded sales counters are not financial records.</p>
+            <div class="dashboard-grid" id="financial-metrics" aria-live="polite"></div>
+            <p class="hint" id="profit-note"></p>
+        </section>
+        <section class="panel" aria-labelledby="activity-title">
+            <h2 id="activity-title">Business activity</h2>
+            <div class="dashboard-grid" id="activity-metrics"></div>
+        </section>
+        <section class="panel" aria-labelledby="sales-title">
+            <h2 id="sales-title">Net sales by product</h2>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th scope="col">Product</th><th scope="col" class="num">Units ordered</th><th scope="col" class="num">Active units</th><th scope="col" class="num">Net sales</th></tr></thead>
+                    <tbody id="sales-rows"></tbody>
+                </table>
+            </div>
+        </section>
+        <section class="panel" aria-labelledby="infrastructure-title">
+            <h2 id="infrastructure-title">Physical infrastructure</h2>
+            <p class="hint">Reserved resources, not live hardware usage. Each VM must fit on one server in its selected data center. GPUs represent dedicated 24 GB devices.</p>
+            <div class="dashboard-grid" id="infrastructure-metrics"></div>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th scope="col">Data center</th><th scope="col">Servers</th><th scope="col">vCPU</th><th scope="col">RAM (GB)</th><th scope="col">Storage (GB)</th><th scope="col">GPU</th></tr></thead>
+                    <tbody id="region-rows"></tbody>
+                </table>
+            </div>
+            <h3>Physical servers</h3>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th scope="col">Server ID</th><th scope="col">Data center</th><th scope="col">vCPU</th><th scope="col">RAM (GB)</th><th scope="col">Storage (GB)</th><th scope="col">GPU</th></tr></thead>
+                    <tbody id="server-rows"></tbody>
+                </table>
+            </div>
+            <p class="hint">Tables show allocated / total resources.</p>
+            <h3>Add physical server</h3>
+            <form id="server-form">
+                <div class="field-row">
+                    <div class="field"><label for="server-region">Data center</label><select id="server-region" name="region"><option>São Paulo</option><option>Rio de Janeiro</option><option>Fortaleza</option></select></div>
+                    <div class="field"><label for="server-cpu">vCPUs</label><input id="server-cpu" name="cpu" type="number" min="1" step="1" value="32" required></div>
+                    <div class="field"><label for="server-ram">RAM (GB)</label><input id="server-ram" name="ram" type="number" min="1" step="1" value="128" required></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label for="server-storage">Storage (GB)</label><input id="server-storage" name="storage" type="number" min="1" step="1" value="2000" required></div>
+                    <div class="field"><label for="server-gpu">GPUs (24 GB each)</label><input id="server-gpu" name="gpu" type="number" min="0" step="1" value="0" required></div>
+                </div>
+                <button class="btn" type="submit">Add server</button>
+                <p class="notice warn" id="server-error" role="alert" hidden></p>
+            </form>
+        </section>
+        <section class="panel" aria-labelledby="capacity-title">
+            <h2 id="capacity-title">Capacity alerts</h2>
+            <div id="stock-alerts"></div>
+        </section>
+    </div>
+

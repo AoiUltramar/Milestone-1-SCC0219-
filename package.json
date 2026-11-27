@@ -1,14 +1,22 @@
 {
   "name": "cache-and-carry",
   "private": true,
-  "description": "Cache & Carry online store (SCC0219). Client-side app; tests use Playwright.",
+  "description": "Cache & Carry online store (SCC0219): Node.js + Express REST API, MongoDB and a vanilla-JavaScript single-page app. Tests use Playwright.",
   "scripts": {
-    "start": "http-server . -p 8080 -c-1 -o",
+    "start": "node server/index.js",
+    "seed": "node server/seed.js",
     "test": "playwright test",
     "test:report": "playwright show-report"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1",
-    "http-server": "14.1.1"
+    "@playwright/test": "1.56.1"
+  },
+  "dependencies": {
+    "express": "^4.22.3",
+    "mongodb": "^6.22.0"
+  },
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=18"
   }
 }

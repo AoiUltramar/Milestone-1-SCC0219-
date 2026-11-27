@@ -1,0 +1,88 @@
+    <div class="wrap">
+        <div class="page-head">
+            <p class="eyebrow">Administration</p>
+            <h1>Users</h1>
+            <p class="lead">Register and manage administrators and customers.</p>
+        </div>
+        <nav class="tabs" aria-label="Admin sections">
+            <a class="btn secondary" href="/admin/dashboard">Dashboard</a>
+            <a class="btn secondary" href="/admin/products">Products</a>
+            <a class="btn" href="/admin/users" aria-current="page">Users</a>
+        </nav>
+
+        <div class="tabs" role="tablist" aria-label="User type">
+            <button class="btn" type="button" role="tab" id="tab-customer" aria-selected="true" aria-controls="users-panel" data-role="customer">Customers</button>
+            <button class="btn" type="button" role="tab" id="tab-admin" aria-selected="false" aria-controls="users-panel" data-role="admin" tabindex="-1">Administrators</button>
+        </div>
+
+        <section id="users-panel" role="tabpanel" aria-labelledby="tab-customer">
+            <div class="toolbar">
+                <div class="search-box">
+                    <label class="visually-hidden" for="user-filter">Filter users</label>
+                    <input id="user-filter" type="search" placeholder="Filter by name or email…">
+                </div>
+                <div class="end">
+                    <button class="btn" type="button" id="new-user">New customer</button>
+                </div>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <caption class="visually-hidden" id="users-caption">Customers</caption>
+                    <thead id="users-head"></thead>
+                    <tbody id="user-rows"></tbody>
+                </table>
+            </div>
+            <p class="hint" id="user-summary"></p>
+        </section>
+
+        <dialog id="user-dialog" aria-labelledby="user-dialog-title">
+            <form id="user-form" method="dialog" novalidate>
+                <h2 id="user-dialog-title">New customer</h2>
+                <div class="field">
+                    <label for="u-name">Full name</label>
+                    <input id="u-name" name="name" type="text" required>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="u-email">Email</label>
+                        <input id="u-email" name="email" type="email" required>
+                    </div>
+                    <div class="field">
+                        <label for="u-phone">Phone</label>
+                        <input id="u-phone" name="phone" type="tel">
+                    </div>
+                </div>
+                <div class="field" data-for="admin">
+                    <label for="u-username">Username <span style="font-weight: 400;">(optional)</span></label>
+                    <input id="u-username" name="username" type="text" autocomplete="off">
+                </div>
+                <div data-for="customer">
+                    <div class="field">
+                        <label for="u-street">Address</label>
+                        <input id="u-street" name="street" type="text">
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="u-city">City</label>
+                            <input id="u-city" name="city" type="text">
+                        </div>
+                        <div class="field">
+                            <label for="u-cep">CEP</label>
+                            <input id="u-cep" name="cep" type="text" inputmode="numeric">
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="u-password">Password</label>
+                    <input id="u-password" name="password" type="password" autocomplete="new-password" minlength="8" aria-describedby="u-password-hint">
+                    <p class="hint" id="u-password-hint">At least 8 characters.</p>
+                </div>
+                <div class="notice warn" id="user-error" role="alert" tabindex="-1" hidden></div>
+                <div class="actions">
+                    <button class="btn" type="submit" value="save">Save</button>
+                    <button class="btn secondary" type="button" id="user-cancel">Cancel</button>
+                </div>
+            </form>
+        </dialog>
+    </div>
+

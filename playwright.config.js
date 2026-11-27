@@ -1,49 +1,46 @@
-// Playwright configuration: starts a local web server and runs tests/*.spec.js
-// in Chromium. Run with:  npm test
+// Playwright configuration. `npm test` starts the Node.js server on port 8081
+// with a separate test database ("cacheandcarry_test"), then runs tests/*.spec.js.
+//
+// It needs MongoDB running (default mongodb://127.0.0.1:27017; set MONGO_URL to
+// change it). The tests empty and re-seed ONLY the test database.
 const fs = require("fs");
 const { defineConfig, devices } = require("@playwright/test");
 
-let firefoxInstalled = false;
-try { firefoxInstalled = fs.existsSync(require("playwright-core").firefox.executablePath()); } catch { /* not installed */ }
+const PORT = 8081;
 
 // WebMCP is behind a flag, and Playwright's bundled Chromium is too old for it.
 // The "webmcp" project uses a system Chrome/Chromium 146+ instead; set
 // WEBMCP_CHROME to its path, or it uses /usr/bin/chromium when that exists.
 const webmcpChrome = process.env.WEBMCP_CHROME ||
     ["/usr/bin/chromium", "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable"].find(p => fs.existsSync(p));
+const launchOptions = process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {};
 
 module.exports = defineConfig({
     testDir: "./tests",
-    fullyParallel: true,
+    // One shared database, so the tests run one after another.
+    fullyParallel: false,
+    workers: 1,
     retries: 0,
     reporter: [["list"], ["html", { open: "never" }]],
     use: {
-        baseURL: "http://localhost:8080/html/",
+        baseURL: `http://localhost:${PORT}`,
         trace: "retain-on-failure",
-        // Google Fonts aren't needed for tests; skipping them keeps runs fast offline.
     },
     projects: [
         {
+            name: "api",
+            testMatch: /api\.spec\.js/,
+        },
+        {
             name: "desktop",
-            testIgnore: /(responsive|webmcp|file-protocol)\.spec\.js/,
-            use: { ...devices["Desktop Chrome"],
-                   launchOptions: process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {} },
+            testIgnore: /(api|responsive|webmcp)\.spec\.js/,
+            use: { ...devices["Desktop Chrome"], launchOptions },
         },
         {
             name: "phone",
             testMatch: /responsive\.spec\.js/,
-            use: { ...devices["Pixel 7"],
-                   launchOptions: process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {} },
+            use: { ...devices["Pixel 7"], launchOptions },
         },
-        // Firefox opening the pages as files, with Firefox's default
-        // strict file-origin setting (Playwright turns it off). Needs:
-        // npx playwright install firefox
-        ...(firefoxInstalled ? [{
-            name: "firefox-file",
-            testMatch: /file-protocol\.spec\.js/,
-            use: { ...devices["Desktop Firefox"],
-                   launchOptions: { firefoxUserPrefs: { "security.fileuri.strict_origin_policy": true } } },
-        }] : []),
         ...(webmcpChrome ? [{
             name: "webmcp",
             testMatch: /webmcp\.spec\.js/,
@@ -53,8 +50,10 @@ module.exports = defineConfig({
         }] : []),
     ],
     webServer: {
-        command: "npx http-server . -p 8080 -c-1 --silent",
-        url: "http://localhost:8080/html/index.html",
-        reuseExistingServer: true,
+        command: "node server/index.js",
+        env: { PORT: String(PORT), DB_NAME: process.env.TEST_DB_NAME || "cacheandcarry_test", CC_TEST: "1" },
+        url: `http://localhost:${PORT}/api/products`,
+        reuseExistingServer: false,
+        timeout: 30000,
     },
 });

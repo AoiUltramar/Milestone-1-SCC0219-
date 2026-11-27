@@ -1,0 +1,129 @@
+    <div class="wrap">
+        <div class="page-head">
+            <p class="eyebrow">Administration</p>
+            <h1>Products</h1>
+            <p class="lead">Create, edit and delete plans, and manage service capacity.</p>
+        </div>
+        <nav class="tabs" aria-label="Admin sections">
+            <a class="btn secondary" href="/admin/dashboard">Dashboard</a>
+            <a class="btn" href="/admin/products" aria-current="page">Products</a>
+            <a class="btn secondary" href="/admin/users">Users</a>
+        </nav>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <label class="visually-hidden" for="product-filter">Filter products</label>
+                <input id="product-filter" type="search" placeholder="Filter by name…">
+                <label class="visually-hidden" for="category-filter">Category</label>
+                <select id="category-filter" style="width: auto;">
+                    <option value="">All categories</option>
+                    <option value="vms">Virtual machines</option>
+                    <option value="vpn">VPN</option>
+                    <option value="addons">Add-ons</option>
+                </select>
+            </div>
+            <div class="end">
+                <button class="btn" type="button" id="new-product">New product</button>
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">All products</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Product</th>
+                        <th scope="col">Category</th>
+                        <th scope="col" class="num">Price</th>
+                        <th scope="col" class="num">Available capacity</th>
+                        <th scope="col" class="num">Sold</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody id="product-rows"></tbody>
+            </table>
+        </div>
+        <p class="hint" id="product-summary"></p>
+
+        <dialog id="product-dialog" aria-labelledby="product-dialog-title">
+            <form id="product-form" method="dialog" novalidate>
+                <h2 id="product-dialog-title">New product</h2>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="f-name">Name</label>
+                        <input id="f-name" name="name" type="text" required>
+                    </div>
+                    <div class="field">
+                        <label for="f-id">ID</label>
+                        <input id="f-id" name="id" type="text" pattern="[a-z0-9-]+" aria-describedby="f-id-hint">
+                        <p class="hint" id="f-id-hint">Lowercase, numbers and dashes. Filled from the name if empty.</p>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="f-category">Category</label>
+                        <select id="f-category" name="category">
+                            <option value="vms">Virtual machines</option>
+                            <option value="vpn">VPN</option>
+                            <option value="addons">Add-ons</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="f-unit">Billing unit</label>
+                        <input id="f-unit" name="unit" type="text" value="/mo">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="f-price">Price (R$)</label>
+                        <input id="f-price" name="price" type="number" min="0" step="0.01" required>
+                    </div>
+                    <div class="field">
+                        <label for="f-stock">Quantity in stock</label>
+                        <input id="f-stock" name="stock" type="number" min="0" step="1" required>
+                        <p class="hint" id="f-capacity-hint">VM availability is calculated from physical servers on the dashboard.</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="f-cost">Monthly cost per unit (R$)</label>
+                    <input id="f-cost" name="monthlyCost" type="number" min="0" step="0.01" aria-describedby="f-cost-hint">
+                    <p class="hint" id="f-cost-hint">Optional. Used to estimate gross profit on new subscriptions.</p>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="f-sold">Quantity sold</label>
+                        <input id="f-sold" name="sold" type="number" min="0" step="1" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="f-icon">Icon (emoji)</label>
+                        <input id="f-icon" name="icon" type="text" maxlength="8" value="📦">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="f-image">Photo <span style="font-weight: 400;">(optional, replaces the icon)</span></label>
+                    <input id="f-image" name="image" type="file" accept="image/*" aria-describedby="f-image-hint">
+                    <p class="hint" id="f-image-hint">Images are shrunk to 400 px so they fit in the browser's storage.</p>
+                    <div class="image-preview" id="f-image-preview" hidden>
+                        <img alt="Current product photo" id="f-image-img">
+                        <button class="btn small secondary" type="button" id="f-image-remove">Remove photo</button>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="f-description">Description</label>
+                    <textarea id="f-description" name="description" required></textarea>
+                </div>
+                <div class="field">
+                    <label for="f-specs">Specs</label>
+                    <textarea id="f-specs" name="specs" aria-describedby="f-specs-hint" placeholder="CPU: 2 vCPU&#10;Memory: 4 GB RAM"></textarea>
+                    <p class="hint" id="f-specs-hint">One per line, as <em>Label: value</em>. VM plans require CPU: 2 vCPU, Memory: 4 GB RAM and Storage: 80 GB SSD (example). GPU: 1 × 24 GB is optional.</p>
+                </div>
+                <label class="check"><input type="checkbox" name="trial" id="f-trial"> <span>Offer the 14-day free trial for this plan</span></label>
+                <div class="notice warn" id="product-error" role="alert" tabindex="-1" hidden></div>
+                <div class="actions">
+                    <button class="btn" type="submit" value="save">Save product</button>
+                    <button class="btn secondary" type="button" id="product-cancel">Cancel</button>
+                </div>
+            </form>
+        </dialog>
+    </div>
+
